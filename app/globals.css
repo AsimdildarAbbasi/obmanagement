@@ -19,8 +19,15 @@
   }
 }
 
+html {
+  font-size: 18px; /* Increase baseline scaling for better readability */
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+  font-weight: 500;
 }
+
