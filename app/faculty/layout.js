@@ -1,11 +1,14 @@
 'use client';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { getStoredUser } from '../lib/auth';
 
 const navItems = [
   { label: 'Dashboard',   href: '/faculty/dashboard'   },
   { label: 'Assign Task', href: '/faculty/assign-task' },
   { label: 'Tasks',       href: '/faculty/tasks'       },
+  { label: 'Set Auto Task', href: '/faculty/set-location-task' },
 ];
 
 function NavIcon({ label, active }) {
@@ -27,6 +30,14 @@ function NavIcon({ label, active }) {
         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   );
+  if (label === 'Set Auto Task') return (
+    <svg width="24" height="24" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" 
+        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" 
+        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
   return null;
 }
 
@@ -34,15 +45,22 @@ export default function FacultyLayout({ children }) {
   const router   = useRouter();
   const pathname = usePathname();
 
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (!stored || Number(stored.role) !== 2) {
+      router.push('/');
+    }
+  }, [router]);
+
   function handleLogout() {
     localStorage.removeItem('user');
     router.push('/');
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
 
-      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col fixed h-full z-10">
+      <aside className="w-full md:w-64 bg-white border-r border-gray-100 flex flex-col md:fixed md:h-full z-10">
 
         <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-100">
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 shrink-0"
@@ -74,7 +92,7 @@ export default function FacultyLayout({ children }) {
 
         <div className="px-3 py-4 border-t border-gray-100">
           <button onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-3 rounded-xl text-base font-semibold text-red-500 hover:bg-red-50 w-full transition-colors">
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-base font-semibold text-white bg-[#0C7347] hover:opacity-90 w-full transition-colors">
             <svg width="24" height="24" fill="none" stroke="#EF4444" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
@@ -85,7 +103,7 @@ export default function FacultyLayout({ children }) {
 
       </aside>
 
-      <main className="flex-1 ml-64 min-h-screen">
+      <main className="flex-1 md:ml-64 min-h-screen">
         {children}
       </main>
 

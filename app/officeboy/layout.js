@@ -1,12 +1,14 @@
 'use client';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { getStoredUser } from '../lib/auth';
 
 const navItems = [
-  { label: 'Dashboard',       href: '/officeboy/dashboard'        },
-  { label: 'Available Tasks', href: '/officeboy/available-tasks'  },
-  { label: 'Notifications',   href: '/officeboy/notifications'    },
-  { label: 'Completed',       href: '/officeboy/completed'        },
+  { label: 'Dashboard', href: '/officeboy/dashboard' },
+  { label: 'Available Tasks', href: '/officeboy/available-tasks' },
+  { label: 'Notifications', href: '/officeboy/notifications' },
+  { label: 'Completed', href: '/officeboy/completed' },
 ];
 
 function NavIcon({ label, active }) {
@@ -39,8 +41,15 @@ function NavIcon({ label, active }) {
 }
 
 export default function OfficeBoyLayout({ children }) {
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (!stored || Number(stored.role) !== 1) {
+      router.push('/');
+    }
+  }, [router]);
 
   function handleLogout() {
     localStorage.removeItem('user');
@@ -48,20 +57,20 @@ export default function OfficeBoyLayout({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
 
       {/* ── Sidebar ── */}
-      <aside className="w-56 bg-white border-r border-gray-100 flex flex-col fixed h-full z-10">
+      <aside className="w-full md:w-56 bg-white border-r border-gray-100 flex flex-col md:fixed md:h-full z-10">
 
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-100">
           <div className="w-9 h-9 rounded-full overflow-hidden border-2 flex-shrink-0"
             style={{ borderColor: '#0C7347' }}>
-            <Image src="/logo.png" alt="BIIT" width={36} height={36} />
+            <Image src="/logo.jpeg" alt="BIIT" width={36} height={36} />
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-800 leading-tight">BIIT Management</p>
-            <p className="text-xs text-gray-500">Office Boy</p>
+            <p className="text-lg font-bold text-gray-800 leading-tight">BIIT Management</p>
+            <p className="text-sm text-gray-500">Office Boy</p>
           </div>
         </div>
 
@@ -86,8 +95,8 @@ export default function OfficeBoyLayout({ children }) {
         {/* Logout */}
         <div className="px-3 py-4 border-t border-gray-100">
           <button onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
-            <svg width="20" height="20" fill="none" stroke="#EF4444" strokeWidth="1.8" viewBox="0 0 24 24">
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-[#0C7347] hover:opacity-90 w-full transition-colors">
+            <svg width="20" height="20" fill="none" stroke="#ffffff" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
             </svg>
@@ -98,7 +107,7 @@ export default function OfficeBoyLayout({ children }) {
       </aside>
 
       {/* ── Main content ── */}
-      <main className="flex-1 ml-56 min-h-screen">
+      <main className="flex-1 md:ml-56 min-h-screen">
         {children}
       </main>
 

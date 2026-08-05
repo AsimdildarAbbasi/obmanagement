@@ -23,8 +23,8 @@ export default function FloorsPage() {
   async function fetchData() {
     try {
       const [floorRes, obRes] = await Promise.all([
-        fetch('https://localhost:7094/api/supervisor/floors'),
-        fetch('https://localhost:7094/api/supervisor/officeboys'),
+        fetch('http://localhost:5077/api/supervisor/floors'),
+        fetch('http://localhost:5077/api/supervisor/officeboys'),
       ]);
       setFloors(await floorRes.json());
       setObData(await obRes.json());
@@ -49,7 +49,7 @@ export default function FloorsPage() {
 
     try {
       setBusyFloorId(id);
-      const res = await fetch(`https://localhost:7094/api/supervisor/FloorOffices?id=${id}`);
+      const res = await fetch(`http://localhost:5077/api/supervisor/FloorOffices?id=${id}`);
       const offices = await res.json();
       // Ensure offices is always an array
       setFloorOffices(prev => ({ ...prev, [id]: Array.isArray(offices) ? offices : [] }));
@@ -89,7 +89,7 @@ export default function FloorsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -123,7 +123,7 @@ export default function FloorsPage() {
                 className="w-full flex items-center gap-4 px-6 py-5 hover:bg-gray-50 transition"
               >
                 {/* Icon */}
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-50">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#0C7347]/10">
                   <svg width="26" height="26" fill="none" stroke="#0C7347" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round"
                       d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />

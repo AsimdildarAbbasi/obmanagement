@@ -1,8 +1,26 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import 'leaflet/dist/leaflet.css';
+const API = 'http://localhost:5077';
 
-const API = 'https://localhost:7094';
+const MapContainer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Marker),
+  { ssr: false }
+);
+const Popup = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Popup),
+  { ssr: false }
+);
 
 export default function AssignTaskPage() {
   const router = useRouter();
@@ -14,6 +32,14 @@ export default function AssignTaskPage() {
   const [description, setDescription] = useState('');
   const [locationId, setLocationId] = useState('');
   const [obId, setObId] = useState('');
+
+  // NEW: Map feature state
+  const [selectedLocationId, setSelectedLocationId] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
+  // ✅ NEW STATES
+  const [taskMode, setTaskMode] = useState("now");
+  const [scheduledAt, setScheduledAt] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -29,6 +55,19 @@ export default function AssignTaskPage() {
 
     setUser(parsed);
     fetchDropdowns(parsed.id);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    import('leaflet').then((L) => {
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
+        iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
+        shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+      });
+    });
   }, []);
 
   async function fetchDropdowns(facultyId) {
@@ -58,6 +97,11 @@ export default function AssignTaskPage() {
     if (!locationId) return setError('Select location');
     if (!obId) return setError('Select office boy');
 
+    // NEW VALIDATION
+    if (taskMode === "later" && !scheduledAt) {
+      return setError("Please select date and time for scheduled task");
+    }
+
     setSubmitting(true);
 
     try {
@@ -69,6 +113,10 @@ export default function AssignTaskPage() {
           officeBoyAccountId: parseInt(obId),
           locationId: parseInt(locationId),
           description: description.trim(),
+
+          // NEW FIELDS
+          taskMode: taskMode,
+          scheduledAt: taskMode === "later" ? scheduledAt : null,
         }),
       });
 
@@ -79,11 +127,12 @@ export default function AssignTaskPage() {
         return;
       }
 
-      // Reset form
       setSuccess('Task assigned successfully!');
       setDescription('');
       setLocationId('');
       setObId('');
+      setTaskMode("now");
+      setScheduledAt('');
 
     } catch {
       setError('Server error');
@@ -95,13 +144,13 @@ export default function AssignTaskPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 ">
 
       <h1 className="text-3xl font-extrabold text-gray-800 mb-8">
         Assign Task
@@ -124,7 +173,7 @@ export default function AssignTaskPage() {
               placeholder="Describe the task"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700 outline-none resize-none focus:border-green-600"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700 outline-none resize-none focus:border-[#0C7347]"
             />
           </div>
 
@@ -133,19 +182,52 @@ export default function AssignTaskPage() {
             <label className="block text-base font-bold text-gray-700 mb-1.5">
               Location
             </label>
-            <select
-              value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3"
-            >
-              <option value="">Select location</option>
-              {locations.map((l, index) => (
-                <option key={l.id ?? index} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-3">
+              <select
+                value={locationId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setLocationId(selectedId);
+                  setSelectedLocationId(selectedId);
+
+                  const loc = locations.find((location) => String(location.id) === selectedId);
+                  setSelectedLocation(loc ?? null);
+                }}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3"
+              >
+                <option value="">Select location</option>
+                {locations.map((l, index) => (
+                  <option key={l.id ?? index} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          {selectedLocation && selectedLocation.latitude != null && selectedLocation.longitude != null && (
+            <div className="mb-5">
+              {/* NEW: Auto map on selection */}
+              <div className="rounded-2xl overflow-hidden border border-gray-200">
+                <MapContainer
+                  center={[selectedLocation.latitude, selectedLocation.longitude]}
+                  zoom={14}
+                  className="h-80 w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[selectedLocation.latitude, selectedLocation.longitude]}>
+                    <Popup>{selectedLocation.name}</Popup>
+                  </Marker>
+                </MapContainer>
+              </div>
+            </div>
+          )}
+          {selectedLocation && (selectedLocation.latitude == null || selectedLocation.longitude == null) && (
+            <p className="text-sm text-gray-500 mb-5">Location not available</p>
+          )}
 
           {/* Office Boy */}
           <div className="mb-5">
@@ -166,6 +248,49 @@ export default function AssignTaskPage() {
             </select>
           </div>
 
+          {/* ✅ TASK MODE */}
+          <div className="mb-5">
+            <label className="block text-base font-bold text-gray-700 mb-1.5">
+              Task Type
+            </label>
+
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={taskMode === "now"}
+                  onChange={() => setTaskMode("now")}
+                />
+                Now
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={taskMode === "later"}
+                  onChange={() => setTaskMode("later")}
+                />
+                Later
+              </label>
+            </div>
+          </div>
+
+          {/* ✅ SCHEDULE INPUT */}
+          {taskMode === "later" && (
+            <div className="mb-5">
+              <label className="block text-base font-bold text-gray-700 mb-1.5">
+                Schedule Date & Time
+              </label>
+
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3"
+              />
+            </div>
+          )}
+
           {/* Error */}
           {error && (
             <p className="text-red-600 mb-4">{error}</p>
@@ -173,7 +298,7 @@ export default function AssignTaskPage() {
 
           {/* Success */}
           {success && (
-            <p className="text-green-600 mb-4">{success}</p>
+            <p className="text-[#0C7347] mb-4">{success}</p>
           )}
 
           {/* Button */}

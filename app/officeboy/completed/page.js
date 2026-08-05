@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API = 'https://localhost:7094';
+const API = 'http://localhost:5077';
 
 function formatDate(d) {
   if (!d) return '';
@@ -13,9 +13,9 @@ function formatDate(d) {
 }
 
 export default function CompletedTasksPage() {
-  const router  = useRouter();
-  const [user,    setUser]    = useState(null);
-  const [tasks,   setTasks]   = useState([]);
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,22 +27,22 @@ export default function CompletedTasksPage() {
     fetchTasks(parsed.id);
   }, []);
 
- async function fetchTasks(id) {
-  try {
-    const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
-    const text = await res.text();                          // read as text first
-    const json = text ? JSON.parse(text) : [];             // parse only if not empty
-    setTasks(Array.isArray(json) ? json : []);
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setLoading(false);
+  async function fetchTasks(id) {
+    try {
+      const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
+      const text = await res.text();                          // read as text first
+      const json = text ? JSON.parse(text) : [];             // parse only if not empty
+      setTasks(Array.isArray(json) ? json : []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }
-}
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default function CompletedTasksPage() {
               {/* Title + status */}
               <div className="flex items-start justify-between gap-4 mb-2">
                 <p className="text-sm font-bold text-gray-800">{task.description}</p>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 bg-green-100 text-green-700">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 bg-[#0C7347]/10 text-[#0C7347]">
                   Completed
                 </span>
               </div>
@@ -102,7 +102,7 @@ export default function CompletedTasksPage() {
                 </span>
                 {/* Rating if available */}
                 {task.rating && (
-                  <span className="text-xs text-amber-500 font-medium">
+                  <span className="text-xs font-medium text-[#0C7347]">
                     ⭐ {task.rating}/5
                   </span>
                 )}

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API = 'https://localhost:7094';
+const API = 'http://localhost:5077';
 
 function formatDate(d) {
   if (!d) return '';
@@ -43,7 +43,7 @@ export default function NotificationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -71,8 +71,7 @@ export default function NotificationsPage() {
               className="bg-white rounded-2xl px-6 py-4 shadow-sm border border-gray-100 flex items-start gap-4">
 
               {/* Bell icon */}
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                style={{ backgroundColor: '#E8F5E9' }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-[#0C7347]/10">
                 <svg width="18" height="18" fill="none" stroke="#0C7347" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round"
                     d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -101,8 +100,7 @@ export default function NotificationsPage() {
               </div>
 
               {/* New badge */}
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: '#E8F5E9', color: '#0C7347' }}>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 bg-[#0C7347]/10 text-[#0C7347]">
                 New
               </span>
 

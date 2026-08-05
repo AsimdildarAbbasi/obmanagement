@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { getStoredUser, getDashboardRoute } from './lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,6 +26,14 @@ export default function LoginPage() {
     3: '/supervisor/dashboard',
   };
 
+  useEffect(() => {
+    const storedUser = getStoredUser();
+    const redirectPath = storedUser ? getDashboardRoute(storedUser.role) : null;
+    if (redirectPath) {
+      router.push(redirectPath);
+    }
+  }, [router]);
+
   async function handleLogin() {
     setError('');
 
@@ -36,7 +45,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('https://localhost:7094/api/auth/login', {
+      const response = await fetch('http://localhost:5077/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, password }),
@@ -117,7 +126,7 @@ export default function LoginPage() {
           <label className="block text-base font-bold text-gray-700 mb-1">
             Name
           </label>
-          <div className="flex items-center border border-gray-300 rounded-lg px-3 py-3 focus-within:border-green-600">
+          <div className="flex items-center border border-gray-300 rounded-lg px-3 py-3 focus-within:border-[#0C7347]">
             <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -137,7 +146,7 @@ export default function LoginPage() {
           <label className="block text-base font-bold text-gray-700 mb-1">
             Password
           </label>
-          <div className="flex items-center border border-gray-300 rounded-lg px-3 py-3 focus-within:border-green-600">
+          <div className="flex items-center border border-gray-300 rounded-lg px-3 py-3 focus-within:border-[#0C7347]">
             <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -166,8 +175,7 @@ export default function LoginPage() {
           whileTap={{ scale: 0.95 }}
           onClick={handleLogin}
           disabled={loading}
-          className="w-full py-3 rounded-lg text-white text-base font-bold transition-opacity disabled:opacity-70"
-          style={{ backgroundColor: '#0C7347' }}
+          className="w-full py-3 rounded-lg text-white text-base font-bold bg-[#0C7347] hover:opacity-90 transition disabled:opacity-70"
         >
           {loading ? 'Signing in...' : '→ Sign In'}
         </motion.button>

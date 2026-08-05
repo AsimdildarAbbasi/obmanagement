@@ -1,14 +1,15 @@
 'use client';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { getStoredUser } from '../lib/auth';
 
 const navItems = [
-  { label: 'Dashboard',   href: '/supervisor/dashboard'  },
-  { label: 'Faculty',     href: '/supervisor/faculty'    },
+  { label: 'Dashboard', href: '/supervisor/dashboard' },
+  { label: 'Faculty', href: '/supervisor/faculty' },
   { label: 'Office Boys', href: '/supervisor/officeboys' },
-  { label: 'Floors',      href: '/supervisor/floors'     },
-  { label: 'Offices',     href: '/supervisor/offices'    },
-  { label: 'Reviews',     href: '/supervisor/reviews'    },
+  { label: 'Floors', href: '/supervisor/floors' },
+  { label: 'Reviews', href: '/supervisor/reviews' },
 ];
 
 function NavIcon({ label, active }) {
@@ -37,12 +38,6 @@ function NavIcon({ label, active }) {
         d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
   );
-  if (label === 'Offices') return (
-    <svg width="20" height="20" fill="none" stroke={color} strokeWidth="1.8" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-    </svg>
-  );
   if (label === 'Reviews') return (
     <svg width="20" height="20" fill="none" stroke={color} strokeWidth="1.8" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round"
@@ -53,8 +48,15 @@ function NavIcon({ label, active }) {
 }
 
 export default function SupervisorLayout({ children }) {
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (!stored || Number(stored.role) !== 3) {
+      router.push('/');
+    }
+  }, [router]);
 
   function handleLogout() {
     localStorage.removeItem('user');
@@ -62,14 +64,14 @@ export default function SupervisorLayout({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
 
-      <aside className="w-56 bg-white border-r border-gray-100 flex flex-col fixed h-full z-10">
+      <aside className="w-full md:w-56 bg-white border-r border-gray-100 flex flex-col md:fixed md:h-full z-10">
 
         <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-100">
           <div className="w-9 h-9 rounded-full overflow-hidden border-2 flex-shrink-0"
             style={{ borderColor: '#0C7347' }}>
-            <Image src="/logo.png" alt="BIIT" width={36} height={36} />
+            <Image src="/logo.jpeg" alt="BIIT" width={36} height={36} />
           </div>
           <div>
             <p className="text-sm font-bold text-gray-800 leading-tight">BIIT Management</p>
@@ -95,8 +97,8 @@ export default function SupervisorLayout({ children }) {
 
         <div className="px-3 py-4 border-t border-gray-100">
           <button onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
-            <svg width="20" height="20" fill="none" stroke="#EF4444" strokeWidth="1.8" viewBox="0 0 24 24">
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-[#0C7347] hover:opacity-90 w-full transition-colors">
+            <svg width="20" height="20" fill="none" stroke="#ffffff" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
             </svg>
@@ -106,7 +108,7 @@ export default function SupervisorLayout({ children }) {
 
       </aside>
 
-      <main className="flex-1 ml-56 min-h-screen">
+      <main className="flex-1 md:ml-56 min-h-screen">
         {children}
       </main>
 

@@ -1,8 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import 'leaflet/dist/leaflet.css';
 
-const API = 'https://localhost:7094';
+const API = 'http://localhost:5077';
+
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
 
 function formatDate(d) {
   if (!d) return '';
@@ -68,10 +75,7 @@ function TaskCard({ task, onReviewed }) {
       {/* Title + status */}
       <div className="flex items-start justify-between gap-4 mb-1">
         <p className="text-sm font-bold text-gray-800">{task.description}</p>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0
-          ${task.status === 'Pending'
-            ? 'bg-orange-100 text-orange-500'
-            : 'bg-green-100 text-green-700'}`}>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 bg-[#0C7347]/10 text-[#0C7347]">
           {task.status}
         </span>
       </div>
@@ -134,7 +138,7 @@ function TaskCard({ task, onReviewed }) {
             placeholder="Add a comment..."
             value={remarks}
             onChange={e => setRemarks(e.target.value)}
-            className="w-full mt-3 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none resize-none focus:border-green-600"
+            className="w-full mt-3 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none resize-none focus:border-[#0C7347]"
           />
 
           {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
@@ -156,6 +160,33 @@ function TaskCard({ task, onReviewed }) {
         </div>
       )}
 
+      {/* Map for In Progress Tasks */}
+      {task.status === 'In Progress' && task.latitude && task.longitude && (
+        <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 z-0">
+          <MapContainer 
+            center={[task.latitude, task.longitude]} 
+            zoom={15} 
+            className="h-64 w-full z-0"
+          >
+            <TileLayer
+              attribution='&copy; OpenStreetMap'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {/* Destination Marker */}
+            <Marker position={[task.latitude, task.longitude]}>
+              <Popup><b>Destination:</b> {task.location}</Popup>
+            </Marker>
+            
+            {/* Office Boy Current Marker */}
+            {task.currentLatitude && task.currentLongitude && (
+              <Marker position={[task.currentLatitude, task.currentLongitude]}>
+                <Popup><b>Office Boy is here:</b> {task.currentLocationName}</Popup>
+              </Marker>
+            )}
+          </MapContainer>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -166,9 +197,20 @@ export default function FacultyTasksPage() {
   const [user,      setUser]      = useState(null);
   const [tasks,     setTasks]     = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [activeTab, setActiveTab] = useState('Pending');
+  const [activeTab, setActiveTab] = useState('Active'); // Was 'Pending'
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('leaflet').then((L) => {
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
+          iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
+          shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+        });
+      });
+    }
+
     const stored = localStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
     const parsed = JSON.parse(stored);
@@ -193,14 +235,14 @@ export default function FacultyTasksPage() {
     }
   }
 
-  const pendingTasks   = tasks.filter(t => t.status === 'Pending');
+  const pendingTasks   = tasks.filter(t => t.status === 'Pending' || t.status === 'In Progress');
   const completedTasks = tasks.filter(t => t.status === 'Completed');
-  const displayed      = activeTab === 'Pending' ? pendingTasks : completedTasks;
+  const displayed      = activeTab === 'Active' ? pendingTasks : completedTasks;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -212,18 +254,12 @@ export default function FacultyTasksPage() {
 
       {/* Tabs */}
       <div className="flex gap-3 mb-6">
-        <button onClick={() => setActiveTab('Pending')}
-          className="px-5 py-2 rounded-xl text-sm font-semibold transition-colors"
-          style={activeTab === 'Pending'
-            ? { backgroundColor: '#0C7347', color: 'white' }
-            : { backgroundColor: 'white', color: '#6B7280', border: '1px solid #E5E7EB' }}>
-          Pending ({pendingTasks.length})
+        <button onClick={() => setActiveTab('Active')}
+          className={`px-5 py-2 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'Active' ? 'bg-[#0C7347] text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}>
+          Active ({pendingTasks.length})
         </button>
         <button onClick={() => setActiveTab('Completed')}
-          className="px-5 py-2 rounded-xl text-sm font-semibold transition-colors"
-          style={activeTab === 'Completed'
-            ? { backgroundColor: '#0C7347', color: 'white' }
-            : { backgroundColor: 'white', color: '#6B7280', border: '1px solid #E5E7EB' }}>
+          className={`px-5 py-2 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'Completed' ? 'bg-[#0C7347] text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}>
           Completed ({completedTasks.length})
         </button>
       </div>
@@ -232,7 +268,7 @@ export default function FacultyTasksPage() {
       {displayed.length === 0 ? (
         <div className="bg-white rounded-2xl py-12 text-center shadow-sm border border-gray-100">
           <p className="text-gray-400 text-sm">No {activeTab.toLowerCase()} tasks</p>
-          {activeTab === 'Pending' && (
+          {activeTab === 'Active' && (
             <button onClick={() => router.push('/faculty/assign-task')}
               className="mt-3 text-sm font-semibold px-5 py-2 rounded-xl text-white"
               style={{ backgroundColor: '#0C7347' }}>

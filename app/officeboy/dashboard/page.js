@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API = 'https://localhost:7094';
+const API = 'http://localhost:5077';
 
 function StatCard({ icon, label, count, color }) {
   return (
@@ -31,7 +31,9 @@ export default function OfficeBoyDashboard() {
   const router  = useRouter();
   const [user,    setUser]    = useState(null);
   const [tasks,   setTasks]   = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingTask, setUpdatingTask] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -40,7 +42,40 @@ export default function OfficeBoyDashboard() {
     if (parsed.role !== 1) { router.push('/'); return; }
     setUser(parsed);
     fetchTasks(parsed.id);
+    fetchLocations();
   }, []);
+
+  async function fetchLocations() {
+    try {
+      const res = await fetch(`${API}/api/tasks/locations`);
+      const json = await res.json();
+      setLocations(Array.isArray(json) ? json : []);
+    } catch (e) { console.error(e); }
+  }
+
+  async function startTask(taskId) {
+    try {
+      await fetch(`${API}/api/tasks/${taskId}/start`, { method: 'PUT' });
+      fetchTasks(user.id);
+    } catch (e) { console.error(e); }
+  }
+
+  async function updateLocation(taskId, locationId) {
+    if (!locationId) return;
+    setUpdatingTask(taskId);
+    try {
+      await fetch(`${API}/api/tasks/${taskId}/update-current-location`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationId: parseInt(locationId) })
+      });
+      fetchTasks(user.id);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdatingTask(null);
+    }
+  }
 
  async function fetchTasks(id) {
   try {
@@ -55,14 +90,14 @@ export default function OfficeBoyDashboard() {
   }
 }
   const pendingCount    = tasks.filter(t => t.status === 'Pending').length;
-  const inProgressCount = tasks.filter(t => t.status === 'InProgress').length;
+  const inProgressCount = tasks.filter(t => t.status === 'In Progress').length;
   const completedCount  = tasks.filter(t => t.status === 'Completed').length;
   const activeTasks     = tasks.filter(t => t.status !== 'Completed');
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -82,7 +117,7 @@ export default function OfficeBoyDashboard() {
             </svg>
           </div>
           {pendingCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#0C7347] rounded-full flex items-center justify-center">
               <span className="text-white text-xs font-bold">{pendingCount}</span>
             </span>
           )}
@@ -98,13 +133,13 @@ export default function OfficeBoyDashboard() {
 
         <div className="flex gap-4 flex-wrap">
           <StatCard
-            color="#E65100" label="Pending" count={pendingCount}
+            color="#0C7347" label="Pending" count={pendingCount}
             icon={<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>}
           />
           <StatCard
-            color="#1565C0" label="In Progress" count={inProgressCount}
+            color="#0C7347" label="In Progress" count={inProgressCount}
             icon={<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -117,7 +152,7 @@ export default function OfficeBoyDashboard() {
             </svg>}
           />
           <StatCard
-            color="#6A1B9A" label="Notifications" count={pendingCount}
+            color="#0C7347" label="Notifications" count={pendingCount}
             icon={<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -168,12 +203,44 @@ export default function OfficeBoyDashboard() {
                     </span>
                   </div>
                 </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0
-                  ${task.status === 'Pending'
-                    ? 'bg-orange-100 text-orange-500'
-                    : 'bg-blue-100 text-blue-600'}`}>
-                  {task.status}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 bg-[#0C7347]/10 text-[#0C7347]">
+                    {task.status}
+                  </span>
+                  
+                  {task.status === 'Pending' && (
+                    <button 
+                      onClick={() => startTask(task.taskId)}
+                      className="text-xs font-semibold px-3 py-1.5 bg-[#0C7347] text-white rounded-lg hover:bg-[#095A37]"
+                    >
+                      Start Task
+                    </button>
+                  )}
+
+                  {task.status === 'In Progress' && (
+                    <div className="flex flex-col items-end gap-1 mt-1">
+                      <div className="flex gap-2 items-center">
+                        <select 
+                          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if(val) updateLocation(task.taskId, val);
+                          }}
+                          disabled={updatingTask === task.taskId}
+                          value={task.currentLocationId || ''}
+                        >
+                          <option value="">Update Location...</option>
+                          {locations.map(l => (
+                            <option key={l.id} value={l.id}>{l.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {task.currentLocationName && (
+                         <span className="text-[10px] text-gray-500">Currently: {task.currentLocationName}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))

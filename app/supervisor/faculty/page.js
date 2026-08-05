@@ -16,7 +16,7 @@ export default function FacultyPage() {
 
   async function fetchFaculty() {
     try {
-      const res  = await fetch('https://localhost:7094/api/supervisor/faculty');
+      const res  = await fetch('http://localhost:5077/api/supervisor/faculty');
       const json = await res.json();
       setFaculty(json);
     } catch (e) {
@@ -53,12 +53,12 @@ export default function FacultyPage() {
     return String(floor);
   }
 
-  const colors = ['#0C7347', '#1565C0', '#6A1B9A', '#E65100', '#00838F'];
+  const colors = ['#0C7347'];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -90,8 +90,7 @@ export default function FacultyPage() {
             className="flex items-center gap-4 px-6 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
 
             {/* Avatar */}
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0"
-              style={{ backgroundColor: colors[i % colors.length] }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0 bg-[#0C7347]">
               {initials(f.name)}
             </div>
 
@@ -104,8 +103,7 @@ export default function FacultyPage() {
             </div>
 
             {/* Floor badge */}
-            <span className="text-sm font-semibold px-3 py-1.5 rounded-full"
-              style={{ backgroundColor: '#E8F5E9', color: '#0C7347' }}>
+            <span className="text-sm font-semibold px-3 py-1.5 rounded-full bg-[#0C7347]/10 text-[#0C7347]">
               {floorLabel(f.floor)}
             </span>
 

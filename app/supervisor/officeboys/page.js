@@ -16,7 +16,7 @@ export default function OfficeBoyPage() {
 
   async function fetchOfficeBoys() {
     try {
-      const res  = await fetch('https://localhost:7094/api/supervisor/officeboys');
+      const res  = await fetch('http://localhost:5077/api/supervisor/officeboys');
       const json = await res.json();
       setOfficeBoys(json);
     } catch (e) {
@@ -37,12 +37,12 @@ export default function OfficeBoyPage() {
   }
 
   // Avatar bg colors cycling
-  const colors = ['#0C7347', '#1565C0', '#6A1B9A', '#E65100', '#00838F'];
+  const colors = ['#0C7347'];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -75,8 +75,7 @@ export default function OfficeBoyPage() {
               hover:bg-gray-50 transition-colors`}>
 
             {/* Avatar */}
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0"
-              style={{ backgroundColor: colors[i % colors.length] }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0 bg-[#0C7347]">
               {initials(ob.name)}
             </div>
 
@@ -98,8 +97,7 @@ export default function OfficeBoyPage() {
 
             {/* Assigned offices count */}
             <div className="text-right">
-              <span className="text-sm font-semibold px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: '#E8F5E9', color: '#0C7347' }}>
+              <span className="text-sm font-semibold px-3 py-1.5 rounded-full bg-[#0C7347]/10 text-[#0C7347]">
                 {(ob.assignedOffices?.length ?? ob.assignedFloors?.length ?? (ob.office ? 1 : 0))} offices
               </span>
             </div>

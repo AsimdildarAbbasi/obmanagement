@@ -54,11 +54,11 @@ const icons = {
 };
 
 export default function SupervisorDashboardPage() {
-  const router  = useRouter();
-  const [data,    setData]    = useState(null);
-  const [tasks,   setTasks]   = useState([]);
+  const router = useRouter();
+  const [data, setData] = useState(null);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user,    setUser]    = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -72,8 +72,8 @@ export default function SupervisorDashboardPage() {
   async function fetchAll() {
     try {
       const [dashRes, taskRes] = await Promise.all([
-        fetch('https://localhost:7094/api/supervisor/dashboard'),
-        fetch('https://localhost:7094/api/tasks'),
+        fetch('http://localhost:5077/api/supervisor/dashboard'),
+        fetch('http://localhost:5077/api/tasks'),
       ]);
       const dashJson = await dashRes.json();
       const taskJson = await taskRes.json();
@@ -92,14 +92,14 @@ export default function SupervisorDashboardPage() {
     new Date(t.taskTime).toDateString() === today
   ).length;
 
-  const pendingCount   = tasks.filter(t => t.status === 'Pending').length;
+  const pendingCount = tasks.filter(t => t.status === 'Pending').length;
   const completedCount = tasks.filter(t => t.status === 'Completed').length;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
           <p className="text-base text-gray-600">Loading dashboard...</p>
         </div>
       </div>
@@ -123,11 +123,11 @@ export default function SupervisorDashboardPage() {
         <p className="text-sm text-gray-500 mb-5">Monitor all operations</p>
 
         <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
-          <StatCard icon={icons.faculty}   label="Faculty"      count={data?.totalFaculty}    color="#0C7347" />
-          <StatCard icon={icons.officeboy} label="Office Boys"  count={data?.totalOfficeBoys} color="#1565C0" />
-          <StatCard icon={icons.floors}    label="Floors"       count={data?.totalFloors}     color="#6A1B9A" />
-          <StatCard icon={icons.offices}   label="Offices"      count={data?.totalOffices}    color="#E65100" />
-          <StatCard icon={icons.tasks}     label="Tasks Today"  count={tasksToday}            color="#00838F" />
+          <StatCard icon={icons.faculty} label="Faculty" count={data?.totalFaculty} color="#0C7347" />
+          <StatCard icon={icons.officeboy} label="Office Boys" count={data?.totalOfficeBoys} color="#0C7347" />
+          <StatCard icon={icons.floors} label="Floors" count={data?.totalFloors} color="#0C7347" />
+          <StatCard icon={icons.offices} label="Offices" count={data?.totalOffices} color="#0C7347" />
+          <StatCard icon={icons.tasks} label="Tasks Today" count={tasksToday} color="#0C7347" />
         </div>
       </div>
 
@@ -135,17 +135,16 @@ export default function SupervisorDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
         {/* Pending tasks */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        {/* <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-700">Pending Tasks</h3>
-            <span className="text-sm font-bold px-3 py-1.5 rounded-full text-white"
-              style={{ backgroundColor: '#E65100' }}>
+            <span className="text-sm font-bold px-3 py-1.5 rounded-full text-white bg-[#0C7347]">
               {pendingCount} pending
             </span>
           </div>
           {tasks.filter(t => t.status === 'Pending').slice(0, 4).map((t) => (
             <div key={t.taskId} className="flex items-start gap-3 py-3 border-b border-gray-50 last:border-0">
-              <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: '#E65100' }} />
+              <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 bg-[#0C7347]" />
               <div>
                 <p className="text-base font-semibold text-gray-700">{t.description}</p>
                 <p className="text-sm text-gray-500 mt-1">
@@ -157,20 +156,19 @@ export default function SupervisorDashboardPage() {
           {pendingCount === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">No pending tasks</p>
           )}
-        </div>
+        </div> */}
 
         {/* Completed tasks */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        {/* <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-700">Completed Tasks</h3>
-            <span className="text-sm font-bold px-3 py-1.5 rounded-full text-white"
-              style={{ backgroundColor: '#0C7347' }}>
+            <span className="text-sm font-bold px-3 py-1.5 rounded-full text-white bg-[#0C7347]">
               {completedCount} done
             </span>
           </div>
           {tasks.filter(t => t.status === 'Completed').slice(0, 4).map((t) => (
             <div key={t.taskId} className="flex items-start gap-3 py-3 border-b border-gray-50 last:border-0">
-              <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: '#0C7347' }} />
+              <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 bg-[#0C7347]" />
               <div>
                 <p className="text-base font-semibold text-gray-700">{t.description}</p>
                 <p className="text-sm text-gray-500 mt-1">
@@ -183,16 +181,16 @@ export default function SupervisorDashboardPage() {
           {completedCount === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">No completed tasks yet</p>
           )}
-        </div>
+        </div> */}
 
       </div>
 
       {/* ── Recent tasks table ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+        {/* <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700">Recent Tasks</h3>
-        </div>
-        <div className="overflow-x-auto">
+        </div> */}
+        {/* <div className="overflow-x-auto">
           <table className="w-full text-base">
             <thead>
               <tr className="bg-gray-50 text-sm text-gray-600 uppercase tracking-wide">
@@ -212,10 +210,7 @@ export default function SupervisorDashboardPage() {
                   <td className="px-6 py-3 text-gray-500">{t.officeBoy}</td>
                   <td className="px-6 py-3 text-gray-500">{t.location}</td>
                   <td className="px-6 py-3">
-                    <span className={`text-sm font-semibold px-2.5 py-1.5 rounded-full
-                      ${t.status === 'Pending'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-green-100 text-green-700'}`}>
+                    <span className={`text-sm font-semibold px-2.5 py-1.5 rounded-full ${t.status === 'Pending' ? 'bg-[#0C7347]/10 text-[#0C7347]' : 'bg-[#0C7347]/10 text-[#0C7347]'}`}>
                       {t.status}
                     </span>
                   </td>
@@ -230,7 +225,7 @@ export default function SupervisorDashboardPage() {
               )}
             </tbody>
           </table>
-        </div>
+        </div> */}
       </div>
 
     </div>

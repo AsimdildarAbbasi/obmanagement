@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 // ── API BASE URL ────────────────────────────────────────────────────
-const API = 'https://localhost:7094';
+const API = 'http://localhost:5077';
 
 // ── Stat Card ───────────────────────────────────────────────────────
 function StatCard({ icon, label, count, sub, color }) {
@@ -66,10 +66,7 @@ function TaskRow({ task }) {
           </div>
         </div>
         {/* Status badge */}
-        <span className={`text-sm font-semibold px-2.5 py-1.5 rounded-full shrink-0
-          ${task.status === 'Pending'
-            ? 'bg-orange-100 text-orange-600'
-            : 'bg-green-100 text-green-700'}`}>
+        <span className="text-sm font-semibold px-2.5 py-1.5 rounded-full shrink-0 bg-[#0C7347]/10 text-[#0C7347]">
           {task.status}
         </span>
       </div>
@@ -84,6 +81,7 @@ export default function FacultyDashboard() {
   const [user,    setUser]    = useState(null);
   const [tasks,   setTasks]   = useState([]);
   const [obCount, setObCount] = useState(0);
+  const [activeBoys, setActiveBoys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
 
@@ -119,6 +117,13 @@ export default function FacultyDashboard() {
         setObCount(Array.isArray(obJson) ? obJson.length : 0);
       }
 
+      // 3. Get Active OfficeBoys tracking info
+      const activeRes = await fetch(`${API}/api/tasks/active-for-faculty/${parsed.id}`);
+      if (activeRes.ok) {
+        const activeJson = await activeRes.json();
+        setActiveBoys(Array.isArray(activeJson) ? activeJson : []);
+      }
+
     } catch (e) {
       setError('Could not load dashboard. Make sure the API is running.');
     } finally {
@@ -137,7 +142,7 @@ export default function FacultyDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -174,7 +179,7 @@ export default function FacultyDashboard() {
             }
           />
           <StatCard
-            color="#E65100"
+            color="#0C7347"
             label="Pending"
             count={pendingTasks}
             icon={
@@ -185,7 +190,7 @@ export default function FacultyDashboard() {
             }
           />
           <StatCard
-            color="#1565C0"
+            color="#0C7347"
             label="Completed"
             count={completedTasks}
             icon={
@@ -196,7 +201,7 @@ export default function FacultyDashboard() {
             }
           />
           <StatCard
-            color="#6A1B9A"
+            color="#0C7347"
             label="Office Boys"
             count={obCount}
             sub="On your floor"
@@ -209,6 +214,38 @@ export default function FacultyDashboard() {
           />
         </div>
       </div>
+
+      {/* ── Active Office Boys ── */}
+      {activeBoys.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Active Office Boys Tracking</h2>
+          <div className="flex flex-col gap-3">
+            {activeBoys.map(ab => (
+              <div key={ab.taskId} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#0C7347]/10 flex items-center justify-center">
+                    <span className="text-[#0C7347] font-bold text-lg">{ab.officeBoyName.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">{ab.officeBoyName}</p>
+                    <p className="text-sm text-gray-500">Task: {ab.description}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-[#0C7347] flex items-center justify-end gap-1">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Currently at {ab.currentLocationName}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">Target: {ab.targetLocation}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Recent Tasks ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
