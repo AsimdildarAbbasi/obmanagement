@@ -40,7 +40,8 @@ export default function AvailableTasksPage() {
       const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
       const text = await res.text();                          // read as text first
       const json = text ? JSON.parse(text) : [];             // parse only if not empty
-      setTasks(Array.isArray(json) ? json : []);
+      const activeOnly = Array.isArray(json) ? json.filter(t => t.status === 'Pending' || t.status === 'In Progress') : [];
+      setTasks(activeOnly);
     } catch (e) {
       console.error(e);
     } finally {

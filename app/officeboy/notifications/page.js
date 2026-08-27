@@ -28,17 +28,18 @@ export default function NotificationsPage() {
   }, []);
 
   async function fetchTasks(id) {
-  try {
-    const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
-    const text = await res.text();                          // read as text first
-    const json = text ? JSON.parse(text) : [];             // parse only if not empty
-    setTasks(Array.isArray(json) ? json : []);
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setLoading(false);
+    try {
+      const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
+      const text = await res.text();                          // read as text first
+      const json = text ? JSON.parse(text) : [];             // parse only if not empty
+      const pendingOnly = Array.isArray(json) ? json.filter(t => t.status === 'Pending') : [];
+      setTasks(pendingOnly);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   if (loading) {
     return (
