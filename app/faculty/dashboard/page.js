@@ -246,8 +246,8 @@ export default function FacultyDashboard() {
           </div>
         </div>
       )}
-
-      {/* ── Recent Tasks ── */}
+{/* 
+      ── Recent Tasks ──
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-700">Recent Tasks</h3>
@@ -275,7 +275,7 @@ export default function FacultyDashboard() {
             <TaskRow key={t.taskId} task={t} />
           ))
         )}
-      </div>
+      </div> */}
 
     </div>
   );

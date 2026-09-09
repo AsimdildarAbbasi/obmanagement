@@ -7,8 +7,7 @@ import { getStoredUser } from '../lib/auth';
 const navItems = [
   { label: 'Dashboard',   href: '/faculty/dashboard'   },
   { label: 'Assign Task', href: '/faculty/assign-task' },
-  { label: 'Tasks',       href: '/faculty/tasks'       },
-  { label: 'Set Auto Task', href: '/faculty/set-location-task' },
+  { label: 'Tasks',       href: '/faculty/tasks'       }
 ];
 
 function NavIcon({ label, active }) {
