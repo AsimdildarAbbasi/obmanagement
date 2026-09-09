@@ -223,7 +223,26 @@ export default function FacultyTasksPage() {
     try {
       const res  = await fetch(`${API}/api/tasks`);
       const text = await res.text();
-      const all  = text ? JSON.parse(text) : [];
+      const raw  = text ? JSON.parse(text) : [];
+      const all  = (Array.isArray(raw) ? raw : []).map(t => ({
+        ...t,
+        taskId: t.taskId ?? t.TaskId ?? t.id ?? t.Id,
+        description: t.description ?? t.Description ?? '',
+        status: t.status ?? t.Status ?? '',
+        location: t.location ?? t.Location ?? '',
+        latitude: t.latitude ?? t.Latitude,
+        longitude: t.longitude ?? t.Longitude,
+        faculty: t.faculty ?? t.Faculty ?? '',
+        officeBoy: t.officeBoy ?? t.OfficeBoy ?? '',
+        assignedTo: t.assignedTo ?? t.officeBoy ?? t.OfficeBoy ?? '',
+        taskTime: t.taskTime ?? t.TaskTime,
+        rating: t.rating ?? t.Rating,
+        remarks: t.remarks ?? t.Remarks ?? '',
+        currentLocationId: t.currentLocationId ?? t.CurrentLocationId,
+        currentLocationName: t.currentLocationName ?? t.CurrentLocationName,
+        currentLatitude: t.currentLatitude ?? t.CurrentLatitude,
+        currentLongitude: t.currentLongitude ?? t.CurrentLongitude,
+      }));
       const mine = all.filter(
         t => t.faculty?.toLowerCase() === parsed.name?.toLowerCase()
       );

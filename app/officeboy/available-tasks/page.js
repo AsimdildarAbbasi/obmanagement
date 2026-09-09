@@ -40,7 +40,22 @@ export default function AvailableTasksPage() {
       const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
       const text = await res.text();                          // read as text first
       const json = text ? JSON.parse(text) : [];             // parse only if not empty
-      const activeOnly = Array.isArray(json) ? json.filter(t => t.status === 'Pending' || t.status === 'In Progress') : [];
+      const normalized = (Array.isArray(json) ? json : []).map(t => ({
+        ...t,
+        taskId: t.taskId ?? t.TaskId ?? t.id ?? t.Id,
+        description: t.description ?? t.Description ?? '',
+        status: t.status ?? t.Status ?? '',
+        location: t.location ?? t.Location ?? '',
+        latitude: t.latitude ?? t.Latitude,
+        longitude: t.longitude ?? t.Longitude,
+        assignedBy: t.assignedBy ?? t.AssignedBy ?? '',
+        taskTime: t.taskTime ?? t.TaskTime,
+        rating: t.rating ?? t.Rating,
+        remarks: t.remarks ?? t.Remarks ?? '',
+        currentLocationId: t.currentLocationId ?? t.CurrentLocationId,
+        currentLocationName: t.currentLocationName ?? t.CurrentLocationName,
+      }));
+      const activeOnly = normalized.filter(t => t.status === 'Pending' || t.status === 'In Progress');
       setTasks(activeOnly);
     } catch (e) {
       console.error(e);

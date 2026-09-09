@@ -193,7 +193,7 @@ export default function AssignTaskPage() {
                   const loc = locations.find((location) => String(location.id) === selectedId);
                   setSelectedLocation(loc ?? null);
                 }}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3"
+                className="w-full border text-gray-500 rounded-xl px-4 py-3"
               >
                 <option value="">Select location</option>
                 {locations.map((l, index) => (
@@ -205,29 +205,7 @@ export default function AssignTaskPage() {
             </div>
           </div>
 
-          {selectedLocation && selectedLocation.latitude != null && selectedLocation.longitude != null && (
-            <div className="mb-5">
-              {/* NEW: Auto map on selection */}
-              <div className="rounded-2xl overflow-hidden border border-gray-200">
-                <MapContainer
-                  center={[selectedLocation.latitude, selectedLocation.longitude]}
-                  zoom={14}
-                  className="h-80 w-full"
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <Marker position={[selectedLocation.latitude, selectedLocation.longitude]}>
-                    <Popup>{selectedLocation.name}</Popup>
-                  </Marker>
-                </MapContainer>
-              </div>
-            </div>
-          )}
-          {selectedLocation && (selectedLocation.latitude == null || selectedLocation.longitude == null) && (
-            <p className="text-sm text-gray-500 mb-5">Location not available</p>
-          )}
+       
 
           {/* Office Boy */}
           <div className="mb-5">
@@ -237,7 +215,7 @@ export default function AssignTaskPage() {
             <select
               value={obId}
               onChange={(e) => setObId(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3"
+              className="w-full border text-gray-500 rounded-xl px-4 py-3"
             >
               <option value="">Select office boy</option>
               {officeboys.map((ob, index) => (
@@ -254,8 +232,8 @@ export default function AssignTaskPage() {
               Task Type
             </label>
 
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2">
+            <div className="flex gap-6   text-gray-700">
+              <label className="flex items-center  gap-2">
                 <input
                   type="radio"
                   checked={taskMode === "now"}

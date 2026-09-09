@@ -77,18 +77,33 @@ export default function OfficeBoyDashboard() {
     }
   }
 
- async function fetchTasks(id) {
-  try {
-    const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
-    const text = await res.text();                          // read as text first
-    const json = text ? JSON.parse(text) : [];             // parse only if not empty
-    setTasks(Array.isArray(json) ? json : []);
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setLoading(false);
+  async function fetchTasks(id) {
+    try {
+      const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : [];
+      const normalized = (Array.isArray(json) ? json : []).map(t => ({
+        ...t,
+        taskId: t.taskId ?? t.TaskId ?? t.id ?? t.Id,
+        description: t.description ?? t.Description ?? '',
+        status: t.status ?? t.Status ?? '',
+        location: t.location ?? t.Location ?? '',
+        latitude: t.latitude ?? t.Latitude,
+        longitude: t.longitude ?? t.Longitude,
+        assignedBy: t.assignedBy ?? t.AssignedBy ?? '',
+        taskTime: t.taskTime ?? t.TaskTime,
+        rating: t.rating ?? t.Rating,
+        remarks: t.remarks ?? t.Remarks ?? '',
+        currentLocationId: t.currentLocationId ?? t.CurrentLocationId,
+        currentLocationName: t.currentLocationName ?? t.CurrentLocationName,
+      }));
+      setTasks(normalized);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }
-}
   const pendingCount    = tasks.filter(t => t.status === 'Pending').length;
   const inProgressCount = tasks.filter(t => t.status === 'In Progress').length;
   const completedCount  = tasks.filter(t => t.status === 'Completed').length;

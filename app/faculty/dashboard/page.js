@@ -102,7 +102,19 @@ export default function FacultyDashboard() {
       //    (no faculty-specific task endpoint active in current controller)
       const taskRes = await fetch(`${API}/api/tasks`);
       if (!taskRes.ok) throw new Error('Tasks API failed');
-      const allTasks = await taskRes.json();
+      const allTasksRaw = await taskRes.json();
+      const allTasks = (Array.isArray(allTasksRaw) ? allTasksRaw : []).map(t => ({
+        ...t,
+        taskId: t.taskId ?? t.TaskId ?? t.id ?? t.Id,
+        description: t.description ?? t.Description ?? '',
+        status: t.status ?? t.Status ?? '',
+        location: t.location ?? t.Location ?? '',
+        faculty: t.faculty ?? t.Faculty ?? '',
+        officeBoy: t.officeBoy ?? t.OfficeBoy ?? '',
+        taskTime: t.taskTime ?? t.TaskTime,
+        rating: t.rating ?? t.Rating,
+        remarks: t.remarks ?? t.Remarks ?? '',
+      }));
 
       // Filter tasks where faculty name matches logged in user
       const myTasks = allTasks.filter(
