@@ -1,13 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import 'leaflet/dist/leaflet.css';
 
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
 
 const API = 'http://localhost:5077';
 
@@ -23,7 +17,6 @@ export default function AvailableTasksPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [openMapTaskId, setOpenMapTaskId] = useState(null); // NEW: Map toggle state
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -82,13 +75,6 @@ export default function AvailableTasksPage() {
     }
   }
 
-  function toggleTaskMap(task) {
-    if (task.latitude == null || task.longitude == null) {
-      alert('Location not available');
-      return;
-    }
-    setOpenMapTaskId((current) => (current === task.taskId ? null : task.taskId));
-  }
 
   if (loading) {
     return (
@@ -156,33 +142,7 @@ export default function AvailableTasksPage() {
                 </span>
               </div>
 
-              {/* NEW: View Location button */}
-              <button
-                type="button"
-                onClick={() => toggleTaskMap(task)}
-                className="text-sm text-[#0C7347] font-semibold"
-              >
-                📍 View Location
-              </button>
 
-              {openMapTaskId === task.taskId && task.latitude != null && task.longitude != null && (
-                <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200">
-                  {/* NEW: Map rendering */}
-                  <MapContainer
-                    center={[task.latitude, task.longitude]}
-                    zoom={15}
-                    className="h-64 w-full"
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker position={[task.latitude, task.longitude]}>
-                      <Popup>{task.location}</Popup>
-                    </Marker>
-                  </MapContainer>
-                </div>
-              )}
 
               {/* Action button */}
               {task.status === 'Pending' ? (

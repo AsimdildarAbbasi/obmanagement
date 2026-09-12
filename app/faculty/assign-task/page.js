@@ -28,6 +28,8 @@ export default function AssignTaskPage() {
   const [user, setUser] = useState(null);
   const [locations, setLocations] = useState([]);
   const [officeboys, setOfficeBoys] = useState([]);
+  const [geofences, setGeofences] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [description, setDescription] = useState('');
   const [locationId, setLocationId] = useState('');
@@ -37,9 +39,14 @@ export default function AssignTaskPage() {
   const [selectedLocationId, setSelectedLocationId] = useState('');
   const [selectedLocation, setSelectedLocation] = useState(null);
 
-  // ✅ NEW STATES
+  // Task Mode: "now" | "later" | "geofence"
   const [taskMode, setTaskMode] = useState("now");
   const [scheduledAt, setScheduledAt] = useState("");
+
+  // Geofence Mode States
+  const [geofenceId, setGeofenceId] = useState('');
+  const [triggerType, setTriggerType] = useState('Enter'); // "Enter" | "Exit"
+  const [taskCategoryId, setTaskCategoryId] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -72,16 +79,28 @@ export default function AssignTaskPage() {
 
   async function fetchDropdowns(facultyId) {
     try {
-      const [locRes, obRes] = await Promise.all([
+      const [locRes, obRes, geoRes, catRes] = await Promise.all([
         fetch(`${API}/api/Tasks/locations`),
         fetch(`${API}/api/tasks/byfaculty/${facultyId}`),
+        fetch(`${API}/api/tasks/geofences`),
+        fetch(`${API}/api/tasks/taskcategories`),
       ]);
 
       const locJson = await locRes.json();
       const obJson = await obRes.json();
+      const geoJson = await geoRes.json();
+      const catJson = await catRes.json();
 
       setLocations(Array.isArray(locJson) ? locJson : []);
       setOfficeBoys(Array.isArray(obJson) ? obJson : []);
+
+      const geoList = Array.isArray(geoJson) ? geoJson : (geoJson ? [geoJson] : []);
+      setGeofences(geoList);
+      if (geoList.length > 0) {
+        setGeofenceId(String(geoList[0].id));
+      }
+
+      setCategories(Array.isArray(catJson) ? catJson : []);
     } catch {
       setError('Could not load form data.');
     } finally {
@@ -93,11 +112,65 @@ export default function AssignTaskPage() {
     setError('');
     setSuccess('');
 
+    // --- GEOFENCE MODE SUBMISSION ---
+    if (taskMode === 'geofence') {
+      if (!geofenceId) return setError('Please select a geofence location');
+      if (!obId) return setError('Select office boy');
+
+      setSubmitting(true);
+
+      try {
+        const payload = {
+          facultyAccountId: user.id,
+          officeBoyAccountId: parseInt(obId),
+          geofenceId: parseInt(geofenceId),
+          triggerType: triggerType,
+          taskCategoryId: taskCategoryId ? parseInt(taskCategoryId) : null,
+          description: description.trim() || (taskCategoryId ? categories.find(c => c.id === taskCategoryId)?.name : '') || `Geofence task (${triggerType})`,
+        };
+
+        if (locationId) {
+          payload.locationId = parseInt(locationId);
+        }
+
+        const res = await fetch(`${API}/api/tasks/createGeofenceTask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.message || 'Failed to create geofence task');
+          return;
+        }
+
+        setSuccess(
+          `Geofence task created! It will automatically appear for the office boy once you ${triggerType === 'Enter' ? 'enter' : 'exit'} the selected geofence area.`
+        );
+        setDescription('');
+        setTaskCategoryId(null);
+        setLocationId('');
+        setObId('');
+
+        // Notify background tracker immediately
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('geofence-task-created'));
+        }
+      } catch {
+        setError('Server error');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // --- NOW / LATER SUBMISSION ---
     if (!description.trim()) return setError('Please enter description');
     if (!locationId) return setError('Select location');
     if (!obId) return setError('Select office boy');
 
-    // NEW VALIDATION
     if (taskMode === "later" && !scheduledAt) {
       return setError("Please select date and time for scheduled task");
     }
@@ -113,8 +186,6 @@ export default function AssignTaskPage() {
           officeBoyAccountId: parseInt(obId),
           locationId: parseInt(locationId),
           description: description.trim(),
-
-          // NEW FIELDS
           taskMode: taskMode,
           scheduledAt: taskMode === "later" ? scheduledAt : null,
         }),
@@ -141,16 +212,8 @@ export default function AssignTaskPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-10 h-10 border-4 border-[#0C7347] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="p-8 ">
+    <div className="p-8">
 
       <h1 className="text-3xl font-extrabold text-gray-800 mb-8">
         Assign Task
@@ -163,14 +226,143 @@ export default function AssignTaskPage() {
             Assign New Task
           </h2>
 
+          {/* TASK MODE SELECTION */}
+          <div className="mb-6">
+            <label className="block text-base font-bold text-gray-700 mb-2">
+              Task Type
+            </label>
+
+            <div className="flex flex-wrap gap-6 text-gray-700">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="taskMode"
+                  checked={taskMode === "now"}
+                  onChange={() => setTaskMode("now")}
+                />
+                Now
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="taskMode"
+                  checked={taskMode === "later"}
+                  onChange={() => setTaskMode("later")}
+                />
+                Later
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="taskMode"
+                  checked={taskMode === "geofence"}
+                  onChange={() => setTaskMode("geofence")}
+                />
+                My Location
+              </label>
+            </div>
+          </div>
+
+          {/* --- GEOFENCE-SPECIFIC FIELDS --- */}
+          {taskMode === "geofence" && (
+            <>
+              {/* Geofence Selection */}
+              <div className="mb-5">
+                <label className="block text-base font-bold text-gray-700 mb-1.5">
+                  Geofence Area
+                </label>
+                <select
+                  value={geofenceId}
+                  onChange={(e) => setGeofenceId(e.target.value)}
+                  className="w-full border text-gray-500 rounded-xl px-4 py-3"
+                >
+                  <option value="">Select geofence</option>
+                  {geofences.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Trigger Toggle */}
+              <div className="mb-5">
+                <label className="block text-base font-bold text-gray-700 mb-1.5">
+                  Trigger When
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTriggerType("Enter")}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${
+                      triggerType === "Enter"
+                        ? "bg-[#0C7347] text-white border-[#0C7347]"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    When I Enter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTriggerType("Exit")}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${
+                      triggerType === "Exit"
+                        ? "bg-[#0C7347] text-white border-[#0C7347]"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    When I Exit
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-action category buttons */}
+              {categories.length > 0 && (
+                <div className="mb-5">
+                  <label className="block text-base font-bold text-gray-700 mb-1.5">
+                    Quick Actions
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((cat) => {
+                      const isSelected = taskCategoryId === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setTaskCategoryId(null);
+                            } else {
+                              setTaskCategoryId(cat.id);
+                              setDescription(cat.name);
+                            }
+                          }}
+                          className={`px-3.5 py-2 rounded-xl text-sm font-medium border transition-all ${
+                            isSelected
+                              ? "bg-[#E8F5E9] text-[#0C7347] border-[#0C7347] font-semibold"
+                              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          {cat.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           {/* Description */}
           <div className="mb-5">
             <label className="block text-base font-bold text-gray-700 mb-1.5">
-              Description
+              Description {taskMode === "geofence" && <span className="text-sm font-normal text-gray-400">(optional)</span>}
             </label>
             <textarea
               rows={4}
-              placeholder="Describe the task"
+              placeholder={taskMode === "geofence" ? "Describe task (optional if quick action selected)" : "Describe the task"}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700 outline-none resize-none focus:border-[#0C7347]"
@@ -180,7 +372,7 @@ export default function AssignTaskPage() {
           {/* Location */}
           <div className="mb-5">
             <label className="block text-base font-bold text-gray-700 mb-1.5">
-              Location
+              Target Location {taskMode === "geofence" && <span className="text-sm font-normal text-gray-400">(optional, defaults to Campus)</span>}
             </label>
             <div className="flex flex-col gap-3">
               <select
@@ -205,8 +397,6 @@ export default function AssignTaskPage() {
             </div>
           </div>
 
-       
-
           {/* Office Boy */}
           <div className="mb-5">
             <label className="block text-base font-bold text-gray-700 mb-1.5">
@@ -226,34 +416,7 @@ export default function AssignTaskPage() {
             </select>
           </div>
 
-          {/* ✅ TASK MODE */}
-          <div className="mb-5">
-            <label className="block text-base font-bold text-gray-700 mb-1.5">
-              Task Type
-            </label>
-
-            <div className="flex gap-6   text-gray-700">
-              <label className="flex items-center  gap-2">
-                <input
-                  type="radio"
-                  checked={taskMode === "now"}
-                  onChange={() => setTaskMode("now")}
-                />
-                Now
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={taskMode === "later"}
-                  onChange={() => setTaskMode("later")}
-                />
-                Later
-              </label>
-            </div>
-          </div>
-
-          {/* ✅ SCHEDULE INPUT */}
+          {/* SCHEDULE INPUT (only for later) */}
           {taskMode === "later" && (
             <div className="mb-5">
               <label className="block text-base font-bold text-gray-700 mb-1.5">
@@ -279,14 +442,14 @@ export default function AssignTaskPage() {
             <p className="text-[#0C7347] mb-4">{success}</p>
           )}
 
-          {/* Button */}
+          {/* Submit Button */}
           <button
             onClick={handleSubmit}
             disabled={submitting}
             className="w-full py-3 rounded-xl text-white font-bold"
             style={{ backgroundColor: '#0C7347' }}
           >
-            {submitting ? 'Assigning...' : 'Assign Task'}
+            {submitting ? 'Assigning...' : (taskMode === 'geofence' ? 'Set Geofence Task' : 'Assign Task')}
           </button>
 
         </div>

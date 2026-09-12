@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { getStoredUser } from '../lib/auth';
+import FacultyLocationTracker from './FacultyLocationTracker';
 
 const navItems = [
   { label: 'Dashboard',   href: '/faculty/dashboard'   },
@@ -102,8 +103,11 @@ export default function FacultyLayout({ children }) {
 
       </aside>
 
-      <main className="flex-1 md:ml-64 min-h-screen">
-        {children}
+      <main className="flex-1 md:ml-64 min-h-screen flex flex-col">
+        <FacultyLocationTracker />
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
 
     </div>

@@ -31,9 +31,7 @@ export default function OfficeBoyDashboard() {
   const router  = useRouter();
   const [user,    setUser]    = useState(null);
   const [tasks,   setTasks]   = useState([]);
-  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [updatingTask, setUpdatingTask] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -42,16 +40,7 @@ export default function OfficeBoyDashboard() {
     if (parsed.role !== 1) { router.push('/'); return; }
     setUser(parsed);
     fetchTasks(parsed.id);
-    fetchLocations();
   }, []);
-
-  async function fetchLocations() {
-    try {
-      const res = await fetch(`${API}/api/tasks/locations`);
-      const json = await res.json();
-      setLocations(Array.isArray(json) ? json : []);
-    } catch (e) { console.error(e); }
-  }
 
   async function startTask(taskId) {
     try {
@@ -60,21 +49,11 @@ export default function OfficeBoyDashboard() {
     } catch (e) { console.error(e); }
   }
 
-  async function updateLocation(taskId, locationId) {
-    if (!locationId) return;
-    setUpdatingTask(taskId);
+  async function completeTask(taskId) {
     try {
-      await fetch(`${API}/api/tasks/${taskId}/update-current-location`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locationId: parseInt(locationId) })
-      });
+      await fetch(`${API}/api/tasks/${taskId}/complete`, { method: 'PUT' });
       fetchTasks(user.id);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setUpdatingTask(null);
-    }
+    } catch (e) { console.error(e); }
   }
 
   async function fetchTasks(id) {
@@ -233,27 +212,12 @@ export default function OfficeBoyDashboard() {
                   )}
 
                   {task.status === 'In Progress' && (
-                    <div className="flex flex-col items-end gap-1 mt-1">
-                      <div className="flex gap-2 items-center">
-                        <select 
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5"
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if(val) updateLocation(task.taskId, val);
-                          }}
-                          disabled={updatingTask === task.taskId}
-                          value={task.currentLocationId || ''}
-                        >
-                          <option value="">Update Location...</option>
-                          {locations.map(l => (
-                            <option key={l.id} value={l.id}>{l.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      {task.currentLocationName && (
-                         <span className="text-[10px] text-gray-500">Currently: {task.currentLocationName}</span>
-                      )}
-                    </div>
+                    <button 
+                      onClick={() => completeTask(task.taskId)}
+                      className="text-xs font-semibold px-3 py-1.5 bg-[#0C7347] text-white rounded-lg hover:bg-[#095A37]"
+                    >
+                      Mark Complete
+                    </button>
                   )}
                 </div>
               </div>
