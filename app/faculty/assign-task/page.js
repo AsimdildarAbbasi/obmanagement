@@ -21,6 +21,10 @@ const Popup = dynamic(
   () => import('react-leaflet').then((mod) => mod.Popup),
   { ssr: false }
 );
+const Circle = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Circle),
+  { ssr: false }
+);
 
 export default function AssignTaskPage() {
   const router = useRouter();
@@ -285,6 +289,64 @@ export default function AssignTaskPage() {
                     </option>
                   ))}
                 </select>
+
+                {/* Selected Geofence Map Preview */}
+                {(() => {
+                  const selectedGeofence = geofences.find((g) => String(g.id) === String(geofenceId));
+                  if (!selectedGeofence || !selectedGeofence.centerLatitude || !selectedGeofence.centerLongitude) {
+                    return null;
+                  }
+                  return (
+                    <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 shadow-xs bg-gray-50">
+                      <div className="px-3.5 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between text-xs text-gray-600">
+                        <span className="font-semibold text-gray-800 flex items-center gap-1.5">
+                          <span className="inline-block w-2 h-2 rounded-full bg-[#0C7347]"></span>
+                          {selectedGeofence.name}
+                        </span>
+                        {/* <span className="bg-emerald-50 text-[#0C7347] font-semibold px-2 py-0.5 rounded-md border border-emerald-200">
+                          Radius: {selectedGeofence.radiusMeters}m
+                        </span> */}
+                      </div>
+                      <div className="h-44 w-full relative z-0">
+                        <MapContainer
+                          key={`${selectedGeofence.id}-${selectedGeofence.centerLatitude}-${selectedGeofence.centerLongitude}`}
+                          center={[selectedGeofence.centerLatitude, selectedGeofence.centerLongitude]}
+                          zoom={16}
+                          scrollWheelZoom={false}
+                          className="h-full w-full z-0"
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <Marker position={[selectedGeofence.centerLatitude, selectedGeofence.centerLongitude]}>
+                            <Popup>
+                              <div className="text-xs">
+                                <strong className="text-gray-800">{selectedGeofence.name}</strong>
+                                <br />
+                                Geofence Radius: {selectedGeofence.radiusMeters}m
+                              </div>
+                            </Popup>
+                          </Marker>
+                          <Circle
+                            center={[selectedGeofence.centerLatitude, selectedGeofence.centerLongitude]}
+                            radius={selectedGeofence.radiusMeters || 100}
+                            pathOptions={{
+                              color: '#0C7347',
+                              fillColor: '#0C7347',
+                              fillOpacity: 0.22,
+                              weight: 2,
+                            }}
+                          />
+                        </MapContainer>
+                      </div>
+                      <div className="px-3 py-1.5 bg-white text-[11px] text-gray-500 border-t border-gray-100 flex justify-between">
+                        <span>Lat: {Number(selectedGeofence.centerLatitude).toFixed(5)}</span>
+                        <span>Lng: {Number(selectedGeofence.centerLongitude).toFixed(5)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Trigger Toggle */}
@@ -296,22 +358,20 @@ export default function AssignTaskPage() {
                   <button
                     type="button"
                     onClick={() => setTriggerType("Enter")}
-                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${
-                      triggerType === "Enter"
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${triggerType === "Enter"
                         ? "bg-[#0C7347] text-white border-[#0C7347]"
                         : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     When I Enter
                   </button>
                   <button
                     type="button"
                     onClick={() => setTriggerType("Exit")}
-                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${
-                      triggerType === "Exit"
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${triggerType === "Exit"
                         ? "bg-[#0C7347] text-white border-[#0C7347]"
                         : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     When I Exit
                   </button>
@@ -339,11 +399,10 @@ export default function AssignTaskPage() {
                               setDescription(cat.name);
                             }
                           }}
-                          className={`px-3.5 py-2 rounded-xl text-sm font-medium border transition-all ${
-                            isSelected
+                          className={`px-3.5 py-2 rounded-xl text-sm font-medium border transition-all ${isSelected
                               ? "bg-[#E8F5E9] text-[#0C7347] border-[#0C7347] font-semibold"
                               : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           {cat.name}
                         </button>
