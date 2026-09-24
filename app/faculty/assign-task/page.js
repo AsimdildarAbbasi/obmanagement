@@ -84,10 +84,10 @@ export default function AssignTaskPage() {
   async function fetchDropdowns(facultyId) {
     try {
       const [locRes, obRes, geoRes, catRes] = await Promise.all([
-        fetch(`${API}/api/Tasks/locations`),
+        fetch(`${API}/api/tasks/Locations`),
         fetch(`${API}/api/tasks/byfaculty/${facultyId}`),
-        fetch(`${API}/api/tasks/geofences`),
-        fetch(`${API}/api/tasks/taskcategories`),
+        fetch(`${API}/api/geofencetasks/geofences`),
+        fetch(`${API}/api/geofencetasks/categories`),
       ]);
 
       const locJson = await locRes.json();
@@ -137,7 +137,7 @@ export default function AssignTaskPage() {
           payload.locationId = parseInt(locationId);
         }
 
-        const res = await fetch(`${API}/api/tasks/createGeofenceTask`, {
+        const res = await fetch(`${API}/api/geofencetasks/createGeofenceTask`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
