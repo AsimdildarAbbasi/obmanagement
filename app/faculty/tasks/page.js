@@ -111,7 +111,7 @@ function TaskCard({ task, onReviewed }) {
           <StarRating value={task.rating} readonly />
           <span className="text-xs font-medium text-gray-500">Reviewed</span>
           {task.remarks && (
-            <span className="text-xs text-gray-400 italic">"{task.remarks}"</span>
+            <span className="text-xs text-gray-400 italic">&ldquo;{task.remarks}&rdquo;</span>
           )}
         </div>
       )}
@@ -204,9 +204,9 @@ export default function FacultyTasksPage() {
       import('leaflet').then((L) => {
         delete L.Icon.Default.prototype._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
-          iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
-          shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+          iconRetinaUrl: '/images/leaflet/marker-icon-2x.png',
+          iconUrl: '/images/leaflet/marker-icon.png',
+          shadowUrl: '/images/leaflet/marker-shadow.png',
         });
       });
     }
