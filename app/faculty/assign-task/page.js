@@ -74,9 +74,9 @@ export default function AssignTaskPage() {
     import('leaflet').then((L) => {
       delete L.Icon.Default.prototype._getIconUrl;
       L.Icon.Default.mergeOptions({
-        iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
-        iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
-        shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+        iconRetinaUrl: '/images/leaflet/marker-icon-2x.png',
+        iconUrl: '/images/leaflet/marker-icon.png',
+        shadowUrl: '/images/leaflet/marker-shadow.png',
       });
     });
   }, []);
@@ -84,10 +84,10 @@ export default function AssignTaskPage() {
   async function fetchDropdowns(facultyId) {
     try {
       const [locRes, obRes, geoRes, catRes] = await Promise.all([
-        fetch(`${API}/api/Tasks/locations`),
+        fetch(`${API}/api/tasks/Locations`),
         fetch(`${API}/api/tasks/byfaculty/${facultyId}`),
-        fetch(`${API}/api/tasks/geofences`),
-        fetch(`${API}/api/tasks/taskcategories`),
+        fetch(`${API}/api/geofencetasks/geofences`),
+        fetch(`${API}/api/geofencetasks/categories`),
       ]);
 
       const locJson = await locRes.json();
@@ -137,7 +137,7 @@ export default function AssignTaskPage() {
           payload.locationId = parseInt(locationId);
         }
 
-        const res = await fetch(`${API}/api/tasks/createGeofenceTask`, {
+        const res = await fetch(`${API}/api/geofencetasks/createGeofenceTask`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -359,8 +359,8 @@ export default function AssignTaskPage() {
                     type="button"
                     onClick={() => setTriggerType("Enter")}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${triggerType === "Enter"
-                        ? "bg-[#0C7347] text-white border-[#0C7347]"
-                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      ? "bg-[#0C7347] text-white border-[#0C7347]"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                       }`}
                   >
                     When I Enter
@@ -369,8 +369,8 @@ export default function AssignTaskPage() {
                     type="button"
                     onClick={() => setTriggerType("Exit")}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all ${triggerType === "Exit"
-                        ? "bg-[#0C7347] text-white border-[#0C7347]"
-                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      ? "bg-[#0C7347] text-white border-[#0C7347]"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                       }`}
                   >
                     When I Exit
@@ -400,8 +400,8 @@ export default function AssignTaskPage() {
                             }
                           }}
                           className={`px-3.5 py-2 rounded-xl text-sm font-medium border transition-all ${isSelected
-                              ? "bg-[#E8F5E9] text-[#0C7347] border-[#0C7347] font-semibold"
-                              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                            ? "bg-[#E8F5E9] text-[#0C7347] border-[#0C7347] font-semibold"
+                            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                             }`}
                         >
                           {cat.name}

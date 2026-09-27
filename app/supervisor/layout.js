@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Office Boys', href: '/supervisor/officeboys' },
   { label: 'Floors', href: '/supervisor/floors' },
   { label: 'Reviews', href: '/supervisor/reviews' },
+  { label: 'Leave', href: '/supervisor/leave' }
 ];
 
 function NavIcon({ label, active }) {
@@ -42,6 +43,12 @@ function NavIcon({ label, active }) {
     <svg width="20" height="20" fill="none" stroke={color} strokeWidth="1.8" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round"
         d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+    </svg>
+  );
+  if (label === 'Leave') return (
+    <svg width="20" height="20" fill="none" stroke={color} strokeWidth="1.8" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05C16.19 13.89 17 14.6 17 15.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
     </svg>
   );
   return null;
