@@ -19,6 +19,11 @@ export default function SupervisorLeaveApprovalPage() {
     const [activeId, setActiveId] = useState(null);   // which card has the remarks box open
     const [remarks, setRemarks] = useState('');
     const [decidingId, setDecidingId] = useState(null); // which card is mid-submit
+    const [freeOfficeBoys, setFreeOfficeBoys] = useState([]);
+    const [freeOfficeBoysLoading, setFreeOfficeBoysLoading] = useState(false);
+    const [freeOfficeBoysLoaded, setFreeOfficeBoysLoaded] = useState(false);
+    const [freeOfficeBoysError, setFreeOfficeBoysError] = useState('');
+    const [substituteOfficeBoyAccountId, setSubstituteOfficeBoyAccountId] = useState('');
 
     useEffect(() => {
         const stored = localStorage.getItem('user');
@@ -38,6 +43,7 @@ export default function SupervisorLeaveApprovalPage() {
             const normalized = (Array.isArray(json) ? json : []).map(l => ({
                 ...l,
                 leaveId: l.leaveId ?? l.LeaveId ?? l.id ?? l.Id,
+                officeBoyId: l.officeBoyId ?? l.OfficeBoyId,
                 officeBoyName: l.officeBoyName ?? l.OfficeBoyName ?? 'Unknown',
                 startDate: l.startDate ?? l.StartDate,
                 endDate: l.endDate ?? l.EndDate,
@@ -52,22 +58,82 @@ export default function SupervisorLeaveApprovalPage() {
         }
     }
 
-    function openDecision(leaveId) {
-        setActiveId(activeId === leaveId ? null : leaveId);
+    async function openDecision(leaveId) {
+        if (activeId === leaveId) {
+            setActiveId(null);
+            setRemarks('');
+            setSubstituteOfficeBoyAccountId('');
+            return;
+        }
+
+        setActiveId(leaveId);
         setRemarks('');
+        setSubstituteOfficeBoyAccountId('');
+        setFreeOfficeBoys([]);
+        setFreeOfficeBoysLoaded(false);
+        setFreeOfficeBoysError('');
+        setFreeOfficeBoysLoading(true);
+
+        try {
+            const res = await fetch(`${API}/api/leaverequest/free-officeboys`);
+            const text = await res.text();
+            const json = text ? JSON.parse(text) : [];
+
+            if (!res.ok) {
+                throw new Error(json.message || 'Could not load free office boys.');
+            }
+            if (!Array.isArray(json)) {
+                throw new Error('Could not load free office boys.');
+            }
+
+            setFreeOfficeBoys(json.map(officeBoy => ({
+                id: officeBoy.id ?? officeBoy.Id,
+                name: officeBoy.name ?? officeBoy.Name ?? 'Unknown',
+            })));
+            setFreeOfficeBoysLoaded(true);
+        } catch (e) {
+            const message = e.message || 'Could not load free office boys.';
+            setFreeOfficeBoysError(message);
+            alert(message);
+        } finally {
+            setFreeOfficeBoysLoading(false);
+        }
     }
 
     async function handleDecide(leaveId, approve) {
+        const leave = leaves.find(item => item.leaveId === leaveId);
+        const officeBoyIsFree = freeOfficeBoys.some(
+            officeBoy => String(officeBoy.id) === String(leave?.officeBoyId)
+        );
+
+        if (approve && freeOfficeBoysLoading) {
+            alert('Please wait while free office boys are loaded.');
+            return;
+        }
+        if (approve && freeOfficeBoysError) {
+            alert(freeOfficeBoysError);
+            return;
+        }
+        if (approve && !officeBoyIsFree && !substituteOfficeBoyAccountId) {
+            alert('Select substitute office boy');
+            return;
+        }
+
         setDecidingId(leaveId);
         try {
+            const payload = {
+                supervisorAccountId: user.id,
+                approve,
+                remarks: remarks.trim() || null,
+            };
+            if (approve && !officeBoyIsFree) {
+                payload.substituteOfficeBoyAccountId = Number(substituteOfficeBoyAccountId);
+            }
+
             const res = await fetch(`${API}/api/leaverequest/${leaveId}/decide`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    supervisorAccountId: user.id,
-                    approve,
-                    remarks: remarks.trim() || null,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
@@ -80,6 +146,7 @@ export default function SupervisorLeaveApprovalPage() {
 
             setActiveId(null);
             setRemarks('');
+            setSubstituteOfficeBoyAccountId('');
             fetchPending();
         } catch (e) {
             console.error(e);
@@ -164,6 +231,27 @@ export default function SupervisorLeaveApprovalPage() {
                                         placeholder="Add a note for the office boy..."
                                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[#0C7347] resize-none"
                                     />
+                                    {freeOfficeBoysLoaded && !freeOfficeBoys.some(
+                                        officeBoy => String(officeBoy.id) === String(leave.officeBoyId)
+                                    ) && (
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 mb-1">
+                                                Select substitute office boy
+                                            </label>
+                                            <select
+                                                value={substituteOfficeBoyAccountId}
+                                                onChange={e => setSubstituteOfficeBoyAccountId(e.target.value)}
+                                                className="w-full border text-gray-500 rounded-xl px-4 py-3"
+                                            >
+                                                <option value="">Select substitute office boy</option>
+                                                {freeOfficeBoys.map(officeBoy => (
+                                                    <option key={officeBoy.id} value={officeBoy.id}>
+                                                        {officeBoy.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                     <div className="flex gap-3">
                                         <button
                                             onClick={() => handleDecide(leave.leaveId, true)}
@@ -179,7 +267,10 @@ export default function SupervisorLeaveApprovalPage() {
                                             {decidingId === leave.leaveId ? 'Submitting...' : 'Confirm Decline'}
                                         </button>
                                         <button
-                                            onClick={() => setActiveId(null)}
+                                            onClick={() => {
+                                                setActiveId(null);
+                                                setSubstituteOfficeBoyAccountId('');
+                                            }}
                                             className="px-5 py-2 rounded-xl text-sm font-semibold text-gray-500">
                                             Cancel
                                         </button>

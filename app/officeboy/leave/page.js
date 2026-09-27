@@ -60,6 +60,7 @@ export default function LeaveManagementPage() {
                 reason: l.reason ?? l.Reason ?? '',
                 status: l.status ?? l.Status ?? 'Pending',
                 supervisorRemarks: l.supervisorRemarks ?? l.SupervisorRemarks ?? '',
+                substituteOfficeBoyName: l.substituteOfficeBoyName ?? l.SubstituteOfficeBoyName ?? '',
                 requestedAt: l.requestedAt ?? l.RequestedAt,
             }));
             setLeaves(normalized);
@@ -175,6 +176,12 @@ export default function LeaveManagementPage() {
                                 </div>
 
                                 <p className="text-sm text-gray-600 mb-2">{leave.reason}</p>
+
+                                {leave.status === 'Approved' && leave.substituteOfficeBoyName && (
+                                    <p className="text-xs text-gray-400 mb-2">
+                                        Substitute: {leave.substituteOfficeBoyName}
+                                    </p>
+                                )}
 
                                 {leave.status !== 'Pending' && leave.supervisorRemarks && (
                                     <p className="text-xs text-gray-400 italic">
