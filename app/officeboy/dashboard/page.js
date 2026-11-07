@@ -34,7 +34,7 @@
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-      const stored = localStorage.getItem('user');
+      const stored = sessionStorage.getItem('user');
       if (!stored) { router.push('/'); return; }
       const parsed = JSON.parse(stored);
       if (parsed.role !== 1) { router.push('/'); return; }

@@ -65,7 +65,7 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem('user', JSON.stringify(data));
+      sessionStorage.setItem('user', JSON.stringify(data));
       router.push(dashboardMap[data.role]);
 
     } catch (err) {

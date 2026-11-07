@@ -43,10 +43,10 @@ function StarRating({ value, onChange, readonly = false }) {
 // ── Task Card ───────────────────────────────────────────────────────
 function TaskCard({ task, onReviewed }) {
   const [showReview, setShowReview] = useState(false);
-  const [rating,     setRating]     = useState(0);
-  const [remarks,    setRemarks]    = useState('');
+  const [rating, setRating] = useState(0);
+  const [remarks, setRemarks] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error,      setError]      = useState('');
+  const [error, setError] = useState('');
 
   async function submitReview() {
     if (rating === 0) { setError('Please select a star rating.'); return; }
@@ -54,7 +54,7 @@ function TaskCard({ task, onReviewed }) {
     setError('');
     try {
       const res = await fetch(`${API}/api/tasks/${task.taskId}/rate`, {
-        method:  'PUT',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating, remarks }),
       });
@@ -163,9 +163,9 @@ function TaskCard({ task, onReviewed }) {
       {/* Map for In Progress Tasks */}
       {task.status === 'In Progress' && task.latitude && task.longitude && (
         <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 z-0">
-          <MapContainer 
-            center={[task.latitude, task.longitude]} 
-            zoom={15} 
+          <MapContainer
+            center={[task.latitude, task.longitude]}
+            zoom={15}
             className="h-64 w-full z-0"
           >
             <TileLayer
@@ -176,7 +176,7 @@ function TaskCard({ task, onReviewed }) {
             <Marker position={[task.latitude, task.longitude]}>
               <Popup><b>Destination:</b> {task.location}</Popup>
             </Marker>
-            
+
             {/* Office Boy Current Marker */}
             {task.currentLatitude && task.currentLongitude && (
               <Marker position={[task.currentLatitude, task.currentLongitude]}>
@@ -194,9 +194,9 @@ function TaskCard({ task, onReviewed }) {
 // ── Main Page ───────────────────────────────────────────────────────
 export default function FacultyTasksPage() {
   const router = useRouter();
-  const [user,      setUser]      = useState(null);
-  const [tasks,     setTasks]     = useState([]);
-  const [loading,   setLoading]   = useState(true);
+  const [user, setUser] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Active'); // Was 'Pending'
 
   useEffect(() => {
@@ -211,7 +211,7 @@ export default function FacultyTasksPage() {
       });
     }
 
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
     const parsed = JSON.parse(stored);
     if (parsed.role !== 2) { router.push('/'); return; }
@@ -221,10 +221,10 @@ export default function FacultyTasksPage() {
 
   async function fetchTasks(parsed) {
     try {
-      const res  = await fetch(`${API}/api/tasks`);
+      const res = await fetch(`${API}/api/tasks`);
       const text = await res.text();
-      const raw  = text ? JSON.parse(text) : [];
-      const all  = (Array.isArray(raw) ? raw : []).map(t => ({
+      const raw = text ? JSON.parse(text) : [];
+      const all = (Array.isArray(raw) ? raw : []).map(t => ({
         ...t,
         taskId: t.taskId ?? t.TaskId ?? t.id ?? t.Id,
         description: t.description ?? t.Description ?? '',
@@ -254,9 +254,9 @@ export default function FacultyTasksPage() {
     }
   }
 
-  const pendingTasks   = tasks.filter(t => t.status === 'Pending' || t.status === 'In Progress');
+  const pendingTasks = tasks.filter(t => t.status === 'Pending' || t.status === 'In Progress');
   const completedTasks = tasks.filter(t => t.status === 'Completed');
-  const displayed      = activeTab === 'Active' ? pendingTasks : completedTasks;
+  const displayed = activeTab === 'Active' ? pendingTasks : completedTasks;
 
   if (loading) {
     return (

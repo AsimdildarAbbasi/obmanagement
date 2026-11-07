@@ -86,8 +86,8 @@ export default function FacultyDashboard() {
   const [error,   setError]   = useState('');
 
   useEffect(() => {
-    // Get logged in user from localStorage
-    const stored = localStorage.getItem('user');
+    // Get logged in user from sessionStorage
+    const stored = sessionStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
     const parsed = JSON.parse(stored);
     // Make sure this is Faculty (role 2)

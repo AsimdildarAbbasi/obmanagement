@@ -1,9 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+import dynamic from 'next/dynamic';
+import 'leaflet/dist/leaflet.css';
 
 const API = 'http://localhost:5077';
+
+// Leaflet components must be client-side only in Next.js
+const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
 
 function formatDate(d) {
   if (!d) return '';
@@ -13,6 +20,14 @@ function formatDate(d) {
   });
 }
 
+function hasCoords(t) {
+  return (
+    t.latitude !== null && t.latitude !== undefined &&
+    t.longitude !== null && t.longitude !== undefined &&
+    !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude))
+  );
+}
+
 export default function AvailableTasksPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -20,7 +35,7 @@ export default function AvailableTasksPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
     const parsed = JSON.parse(stored);
     if (parsed.role !== 1) { router.push('/'); return; }
@@ -28,11 +43,24 @@ export default function AvailableTasksPage() {
     fetchTasks(parsed.id);
   }, []);
 
+  // Marker icon fix (same as your assign-task page)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    import('leaflet').then((L) => {
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: '/images/leaflet/marker-icon-2x.png',
+        iconUrl: '/images/leaflet/marker-icon.png',
+        shadowUrl: '/images/leaflet/marker-shadow.png',
+      });
+    });
+  }, []);
+
   async function fetchTasks(id) {
     try {
       const res = await fetch(`${API}/api/officeboy/${id}/tasks`);
-      const text = await res.text();                          // read as text first
-      const json = text ? JSON.parse(text) : [];             // parse only if not empty
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : [];
       const normalized = (Array.isArray(json) ? json : []).map(t => ({
         ...t,
         taskId: t.taskId ?? t.TaskId ?? t.id ?? t.Id,
@@ -48,8 +76,7 @@ export default function AvailableTasksPage() {
         currentLocationId: t.currentLocationId ?? t.CurrentLocationId,
         currentLocationName: t.currentLocationName ?? t.CurrentLocationName,
       }));
-      const activeOnly = normalized.filter(t => t.status === 'Pending' || t.status === 'In Progress');
-      setTasks(activeOnly);
+      setTasks(normalized.filter(t => t.status === 'Pending' || t.status === 'In Progress'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -75,7 +102,6 @@ export default function AvailableTasksPage() {
     }
   }
 
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -87,7 +113,7 @@ export default function AvailableTasksPage() {
   return (
     <div className="p-8">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Available Tasks</h1>
         <div className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
@@ -98,8 +124,8 @@ export default function AvailableTasksPage() {
         </div>
       </div>
 
-      {/* ── Task list ── */}
-      <div className="flex flex-col gap-4">
+      {/* Task list */}
+      <div className="flex flex-col gap-4 max-w-2xl">
         {tasks.length === 0 ? (
           <div className="bg-white rounded-2xl py-12 text-center shadow-sm border border-gray-100">
             <p className="text-gray-400 text-sm">No available tasks</p>
@@ -142,11 +168,50 @@ export default function AvailableTasksPage() {
                 </span>
               </div>
 
-
+              {/* NEW: Map showing the exact location chosen by the faculty */}
+              {hasCoords(task) ? (
+                <div className="mb-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                  <div className="h-48 w-full relative z-0">
+                    <MapContainer
+                      key={`${task.taskId}-${task.latitude}-${task.longitude}`}
+                      center={[Number(task.latitude), Number(task.longitude)]}
+                      zoom={17}
+                      scrollWheelZoom={false}
+                      className="h-full w-full z-0"
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker position={[Number(task.latitude), Number(task.longitude)]}>
+                        <Popup>
+                          <strong>{task.location}</strong>
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
+                  </div>
+                  <div className="px-3 py-1.5 bg-white text-[11px] text-gray-500 border-t border-gray-100 flex items-center justify-between">
+                    <span>
+                      {Number(task.latitude).toFixed(5)}, {Number(task.longitude).toFixed(5)}
+                    </span>
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${task.latitude},${task.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-[#0C7347] hover:underline"
+                    >
+                      Get directions
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-4 rounded-xl border border-dashed border-gray-200 bg-gray-50 py-4 text-center text-xs text-gray-400">
+                  No map coordinates saved for this location
+                </div>
+              )}
 
               {/* Action button */}
               {task.status === 'Pending' ? (
-                // Start Task — marks as complete (no InProgress status in DB)
                 <button
                   onClick={() => handleStart(task.taskId)}
                   className="px-5 py-2 rounded-xl text-white text-sm font-semibold"
@@ -154,7 +219,6 @@ export default function AvailableTasksPage() {
                   Start Task
                 </button>
               ) : (
-                // Mark Complete
                 <button
                   onClick={() => handleComplete(task.taskId)}
                   className="px-5 py-2 rounded-xl text-white text-sm font-semibold"

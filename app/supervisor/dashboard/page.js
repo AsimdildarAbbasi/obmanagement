@@ -61,7 +61,7 @@ export default function SupervisorDashboardPage() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
     const parsed = JSON.parse(stored);
     if (parsed.role !== 3) { router.push('/'); return; }

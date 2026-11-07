@@ -26,6 +26,9 @@ const Circle = dynamic(
   { ssr: false }
 );
 
+// NEW: modal loaded client-side only
+const AddLocationModal = dynamic(() => import('./AddLocationModal'), { ssr: false });
+
 export default function AssignTaskPage() {
   const router = useRouter();
 
@@ -39,9 +42,11 @@ export default function AssignTaskPage() {
   const [locationId, setLocationId] = useState('');
   const [obId, setObId] = useState('');
 
-  // NEW: Map feature state
   const [selectedLocationId, setSelectedLocationId] = useState('');
   const [selectedLocation, setSelectedLocation] = useState(null);
+
+  // NEW: controls the "Add location" modal
+  const [showAddLocation, setShowAddLocation] = useState(false);
 
   // Task Mode: "now" | "later" | "geofence"
   const [taskMode, setTaskMode] = useState("now");
@@ -49,7 +54,7 @@ export default function AssignTaskPage() {
 
   // Geofence Mode States
   const [geofenceId, setGeofenceId] = useState('');
-  const [triggerType, setTriggerType] = useState('Enter'); // "Enter" | "Exit"
+  const [triggerType, setTriggerType] = useState('Enter');
   const [taskCategoryId, setTaskCategoryId] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -58,7 +63,7 @@ export default function AssignTaskPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
 
     const parsed = JSON.parse(stored);
@@ -112,6 +117,14 @@ export default function AssignTaskPage() {
     }
   }
 
+  // NEW: called after a location is saved from the modal
+  function handleLocationCreated(newLoc) {
+    setLocations((prev) => [...prev, newLoc]);   // shows in dropdown instantly
+    setLocationId(String(newLoc.id));            // auto-select it
+    setSelectedLocationId(String(newLoc.id));
+    setSelectedLocation(newLoc);
+  }
+
   async function handleSubmit() {
     setError('');
     setSuccess('');
@@ -158,7 +171,6 @@ export default function AssignTaskPage() {
         setLocationId('');
         setObId('');
 
-        // Notify background tracker immediately
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('geofence-task-created'));
         }
@@ -303,9 +315,6 @@ export default function AssignTaskPage() {
                           <span className="inline-block w-2 h-2 rounded-full bg-[#0C7347]"></span>
                           {selectedGeofence.name}
                         </span>
-                        {/* <span className="bg-emerald-50 text-[#0C7347] font-semibold px-2 py-0.5 rounded-md border border-emerald-200">
-                          Radius: {selectedGeofence.radiusMeters}m
-                        </span> */}
                       </div>
                       <div className="h-44 w-full relative z-0">
                         <MapContainer
@@ -428,12 +437,12 @@ export default function AssignTaskPage() {
             />
           </div>
 
-          {/* Location */}
+          {/* Location  (NEW: + Add new button) */}
           <div className="mb-5">
             <label className="block text-base font-bold text-gray-700 mb-1.5">
               Target Location {taskMode === "geofence" && <span className="text-sm font-normal text-gray-400">(optional, defaults to Campus)</span>}
             </label>
-            <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
               <select
                 value={locationId}
                 onChange={(e) => {
@@ -444,7 +453,7 @@ export default function AssignTaskPage() {
                   const loc = locations.find((location) => String(location.id) === selectedId);
                   setSelectedLocation(loc ?? null);
                 }}
-                className="w-full border text-gray-500 rounded-xl px-4 py-3"
+                className="flex-1 min-w-0 border text-gray-500 rounded-xl px-4 py-3"
               >
                 <option value="">Select location</option>
                 {locations.map((l, index) => (
@@ -453,6 +462,15 @@ export default function AssignTaskPage() {
                   </option>
                 ))}
               </select>
+
+              <button
+                type="button"
+                onClick={() => setShowAddLocation(true)}
+                className="px-4 py-3 rounded-xl text-white font-semibold whitespace-nowrap"
+                style={{ backgroundColor: '#0C7347' }}
+              >
+                + Add new
+              </button>
             </div>
           </div>
 
@@ -491,17 +509,9 @@ export default function AssignTaskPage() {
             </div>
           )}
 
-          {/* Error */}
-          {error && (
-            <p className="text-red-600 mb-4">{error}</p>
-          )}
+          {error && <p className="text-red-600 mb-4">{error}</p>}
+          {success && <p className="text-[#0C7347] mb-4">{success}</p>}
 
-          {/* Success */}
-          {success && (
-            <p className="text-[#0C7347] mb-4">{success}</p>
-          )}
-
-          {/* Submit Button */}
           <button
             onClick={handleSubmit}
             disabled={submitting}
@@ -513,6 +523,15 @@ export default function AssignTaskPage() {
 
         </div>
       </div>
+
+      {/* NEW: Add Location modal */}
+      {showAddLocation && (
+        <AddLocationModal
+          apiUrl={API}
+          onClose={() => setShowAddLocation(false)}
+          onCreated={handleLocationCreated}
+        />
+      )}
 
     </div>
   );

@@ -9,7 +9,7 @@ export default function FacultyPage() {
   const [search,   setSearch]   = useState('');
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
     fetchFaculty();
   }, []);

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { getStoredUser } from '../lib/auth';
@@ -50,16 +50,19 @@ function NavIcon({ label, active }) {
 export default function OfficeBoyLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const stored = getStoredUser();
     if (!stored || Number(stored.role) !== 1) {
       router.push('/');
+      return;
     }
+    setUser(stored);
   }, [router]);
 
   function handleLogout() {
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     router.push('/');
   }
 
@@ -114,8 +117,24 @@ export default function OfficeBoyLayout({ children }) {
       </aside>
 
       {/* ── Main content ── */}
-      <main className="flex-1 md:ml-56 min-h-screen">
-        {children}
+      <main className="flex-1 md:ml-56 min-h-screen flex flex-col">
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-white border-b border-gray-100 px-4 md:px-8 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-800 truncate">{user?.name || 'BIIT Management'}</p>
+            <p className="text-xs text-gray-500">Office Boy</p>
+          </div>
+          <button onClick={handleLogout}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold text-white bg-[#0C7347] hover:opacity-90 transition-colors shrink-0">
+            <svg width="18" height="18" fill="none" stroke="#ffffff" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+            </svg>
+            Logout
+          </button>
+        </header>
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
 
     </div>

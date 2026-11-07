@@ -12,7 +12,7 @@ export default function FloorsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) {
       router.push('/');
       return;

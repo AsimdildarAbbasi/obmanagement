@@ -11,6 +11,18 @@ function formatDate(d) {
     });
 }
 
+function toInputDate(d) {
+    if (!d) return '';
+    if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}/.test(d)) {
+        return d.slice(0, 10);
+    }
+    const dt = new Date(d);
+    if (Number.isNaN(dt.getTime())) return '';
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${dt.getFullYear()}-${month}-${day}`;
+}
+
 export default function SupervisorLeaveApprovalPage() {
     const router = useRouter();
     const [user, setUser] = useState(null);
@@ -24,9 +36,10 @@ export default function SupervisorLeaveApprovalPage() {
     const [freeOfficeBoysLoaded, setFreeOfficeBoysLoaded] = useState(false);
     const [freeOfficeBoysError, setFreeOfficeBoysError] = useState('');
     const [substituteOfficeBoyAccountId, setSubstituteOfficeBoyAccountId] = useState('');
+    const [approvedEndDate, setApprovedEndDate] = useState('');
 
     useEffect(() => {
-        const stored = localStorage.getItem('user');
+        const stored = sessionStorage.getItem('user');
         if (!stored) { router.push('/'); return; }
         const parsed = JSON.parse(stored);
         if (Number(parsed.role) !== 3) { router.push('/'); return; }
@@ -63,12 +76,16 @@ export default function SupervisorLeaveApprovalPage() {
             setActiveId(null);
             setRemarks('');
             setSubstituteOfficeBoyAccountId('');
+            setApprovedEndDate('');
             return;
         }
+
+        const leave = leaves.find(item => item.leaveId === leaveId);
 
         setActiveId(leaveId);
         setRemarks('');
         setSubstituteOfficeBoyAccountId('');
+        setApprovedEndDate(toInputDate(leave?.endDate));
         setFreeOfficeBoys([]);
         setFreeOfficeBoysLoaded(false);
         setFreeOfficeBoysError('');
@@ -114,6 +131,18 @@ export default function SupervisorLeaveApprovalPage() {
             alert(freeOfficeBoysError);
             return;
         }
+        if (approve && !approvedEndDate) {
+            alert('Select the approved end date');
+            return;
+        }
+        if (approve && leave?.startDate && approvedEndDate < toInputDate(leave.startDate)) {
+            alert('Approved end date cannot be before the start date');
+            return;
+        }
+        if (approve && leave?.endDate && approvedEndDate > toInputDate(leave.endDate)) {
+            alert('Approved end date cannot be after the requested end date');
+            return;
+        }
         if (approve && !officeBoyIsFree && !substituteOfficeBoyAccountId) {
             alert('Select substitute office boy');
             return;
@@ -126,6 +155,9 @@ export default function SupervisorLeaveApprovalPage() {
                 approve,
                 remarks: remarks.trim() || null,
             };
+            if (approve) {
+                payload.endDate = approvedEndDate;
+            }
             if (approve && !officeBoyIsFree) {
                 payload.substituteOfficeBoyAccountId = Number(substituteOfficeBoyAccountId);
             }
@@ -147,6 +179,7 @@ export default function SupervisorLeaveApprovalPage() {
             setActiveId(null);
             setRemarks('');
             setSubstituteOfficeBoyAccountId('');
+            setApprovedEndDate('');
             fetchPending();
         } catch (e) {
             console.error(e);
@@ -231,6 +264,22 @@ export default function SupervisorLeaveApprovalPage() {
                                         placeholder="Add a note for the office boy..."
                                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[#0C7347] resize-none"
                                     />
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 mb-1">
+                                            Approved end date
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={approvedEndDate}
+                                            min={toInputDate(leave.startDate)}
+                                            max={toInputDate(leave.endDate)}
+                                            onChange={e => setApprovedEndDate(e.target.value)}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[#0C7347]"
+                                        />
+                                        <p className="text-[11px] text-gray-400 mt-1">
+                                            Requested until {formatDate(leave.endDate)}
+                                        </p>
+                                    </div>
                                     {freeOfficeBoysLoaded && !freeOfficeBoys.some(
                                         officeBoy => String(officeBoy.id) === String(leave.officeBoyId)
                                     ) && (
@@ -270,6 +319,7 @@ export default function SupervisorLeaveApprovalPage() {
                                             onClick={() => {
                                                 setActiveId(null);
                                                 setSubstituteOfficeBoyAccountId('');
+                                                setApprovedEndDate('');
                                             }}
                                             className="px-5 py-2 rounded-xl text-sm font-semibold text-gray-500">
                                             Cancel
