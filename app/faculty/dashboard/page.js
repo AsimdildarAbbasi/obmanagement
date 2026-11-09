@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-// ── API BASE URL ────────────────────────────────────────────────────
-const API = 'http://localhost:5077';
+import { API } from '../../lib/api';
+import UserAvatar from '../../components/UserAvatar';
 
 // ── Stat Card ───────────────────────────────────────────────────────
 function StatCard({ icon, label, count, sub, color }) {
@@ -235,9 +235,7 @@ export default function FacultyDashboard() {
             {activeBoys.map(ab => (
               <div key={ab.taskId} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0C7347]/10 flex items-center justify-center">
-                    <span className="text-[#0C7347] font-bold text-lg">{ab.officeBoyName.charAt(0)}</span>
-                  </div>
+                  <UserAvatar name={ab.officeBoyName} imageUrl={ab.officeBoyImageUrl} size={40} />
                   <div>
                     <p className="font-semibold text-gray-800">{ab.officeBoyName}</p>
                     <p className="text-sm text-gray-500">Task: {ab.description}</p>

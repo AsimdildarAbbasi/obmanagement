@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '../../lib/api';
+import UserAvatar from '../../components/UserAvatar';
 
 export default function FacultyPage() {
   const router  = useRouter();
@@ -16,7 +18,7 @@ export default function FacultyPage() {
 
   async function fetchFaculty() {
     try {
-      const res  = await fetch('http://localhost:5077/api/supervisor/faculty');
+      const res  = await fetch(`${API}/api/supervisor/faculty`);
       const json = await res.json();
       setFaculty(json);
     } catch (e) {
@@ -30,10 +32,6 @@ export default function FacultyPage() {
     f.name.toLowerCase().includes(search.toLowerCase()) ||
     f.office?.toLowerCase().includes(search.toLowerCase())
   );
-
-  function initials(name) {
-    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  }
 
   function floorLabel(floor) {
     if (!floor) return 'N/A';
@@ -90,9 +88,7 @@ export default function FacultyPage() {
             className="flex items-center gap-4 px-6 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
 
             {/* Avatar */}
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0 bg-[#0C7347]">
-              {initials(f.name)}
-            </div>
+            <UserAvatar name={f.name} imageUrl={f.profileImageUrl} size={48} />
 
             {/* Info */}
             <div className="flex-1">

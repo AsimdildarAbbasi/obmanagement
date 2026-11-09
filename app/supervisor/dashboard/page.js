@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '../../lib/api';
 
 
 // ── Stat Card ──────────────────────────────────────────────────────
@@ -72,8 +73,8 @@ export default function SupervisorDashboardPage() {
   async function fetchAll() {
     try {
       const [dashRes, taskRes] = await Promise.all([
-        fetch('http://localhost:5077/api/supervisor/dashboard'),
-        fetch('http://localhost:5077/api/tasks'),
+        fetch(`${API}/api/supervisor/dashboard`),
+        fetch(`${API}/api/tasks`),
       ]);
       const dashJson = await dashRes.json();
       const taskJson = await taskRes.json();

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { getStoredUser } from '../lib/auth';
+import UserAvatar from '../components/UserAvatar';
 
 const navItems = [
   { label: 'Dashboard', href: '/officeboy/dashboard' },
@@ -119,9 +120,12 @@ export default function OfficeBoyLayout({ children }) {
       {/* ── Main content ── */}
       <main className="flex-1 md:ml-56 min-h-screen flex flex-col">
         <header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-white border-b border-gray-100 px-4 md:px-8 py-3">
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-gray-800 truncate">{user?.name || 'BIIT Management'}</p>
-            <p className="text-xs text-gray-500">Office Boy</p>
+          <div className="flex items-center gap-3 min-w-0">
+            <UserAvatar name={user?.name} imageUrl={user?.profileImageUrl} size={38} />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-800 truncate">{user?.name || 'BIIT Management'}</p>
+              <p className="text-xs text-gray-500">Office Boy</p>
+            </div>
           </div>
           <button onClick={handleLogout}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold text-white bg-[#0C7347] hover:opacity-90 transition-colors shrink-0">

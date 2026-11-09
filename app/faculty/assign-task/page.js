@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
-const API = 'http://localhost:5077';
+import { API } from '../../lib/api';
+import UserAvatar from '../../components/UserAvatar';
 
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
@@ -61,6 +62,9 @@ export default function AssignTaskPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+
+  const [files, setFiles] = useState([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('user');
@@ -125,6 +129,35 @@ export default function AssignTaskPage() {
     setSelectedLocation(newLoc);
   }
 
+  function resetFiles() {
+    setFiles([]);
+    setFileInputKey((key) => key + 1);
+  }
+
+  async function uploadAttachments(taskId) {
+    if (!files.length || !taskId) return { uploaded: 0, error: '' };
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
+
+      const res = await fetch(`${API}/api/tasks/${taskId}/attachments`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        return { uploaded: 0, error: data.message || 'Could not upload attachments.' };
+      }
+
+      return { uploaded: files.length, error: '' };
+    } catch {
+      return { uploaded: 0, error: 'Could not upload attachments.' };
+    }
+  }
+
   async function handleSubmit() {
     setError('');
     setSuccess('');
@@ -163,13 +196,18 @@ export default function AssignTaskPage() {
           return;
         }
 
+        const attachmentResult = await uploadAttachments(data.taskId);
+
         setSuccess(
-          `Geofence task created! It will automatically appear for the office boy once you ${triggerType === 'Enter' ? 'enter' : 'exit'} the selected geofence area.`
+          `Geofence task created! It will automatically appear for the office boy once you ${triggerType === 'Enter' ? 'enter' : 'exit'} the selected geofence area.` +
+          (attachmentResult.uploaded ? ` ${attachmentResult.uploaded} attachment(s) uploaded.` : '') +
+          (attachmentResult.error ? ` ${attachmentResult.error}` : '')
         );
         setDescription('');
         setTaskCategoryId(null);
         setLocationId('');
         setObId('');
+        resetFiles();
 
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('geofence-task-created'));
@@ -214,12 +252,19 @@ export default function AssignTaskPage() {
         return;
       }
 
-      setSuccess('Task assigned successfully!');
+      const attachmentResult = await uploadAttachments(data.taskId);
+
+      setSuccess(
+        'Task assigned successfully!' +
+        (attachmentResult.uploaded ? ` ${attachmentResult.uploaded} attachment(s) uploaded.` : '') +
+        (attachmentResult.error ? ` ${attachmentResult.error}` : '')
+      );
       setDescription('');
       setLocationId('');
       setObId('');
       setTaskMode("now");
       setScheduledAt('');
+      resetFiles();
 
     } catch {
       setError('Server error');
@@ -227,6 +272,10 @@ export default function AssignTaskPage() {
       setSubmitting(false);
     }
   }
+
+  const selectedOfficeBoy = officeboys.find(
+    (ob) => String(ob.id) === String(obId)
+  );
 
   return (
     <div className="p-8">
@@ -479,18 +528,27 @@ export default function AssignTaskPage() {
             <label className="block text-base font-bold text-gray-700 mb-1.5">
               Assign To
             </label>
-            <select
-              value={obId}
-              onChange={(e) => setObId(e.target.value)}
-              className="w-full border text-gray-500 rounded-xl px-4 py-3"
-            >
-              <option value="">Select office boy</option>
-              {officeboys.map((ob, index) => (
-                <option key={ob.id ?? index} value={ob.id}>
-                  {ob.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-3">
+              {selectedOfficeBoy && (
+                <UserAvatar
+                  name={selectedOfficeBoy.name}
+                  imageUrl={selectedOfficeBoy.profileImageUrl}
+                  size={44}
+                />
+              )}
+              <select
+                value={obId}
+                onChange={(e) => setObId(e.target.value)}
+                className="flex-1 min-w-0 border text-gray-500 rounded-xl px-4 py-3"
+              >
+                <option value="">Select office boy</option>
+                {officeboys.map((ob, index) => (
+                  <option key={ob.id ?? index} value={ob.id}>
+                    {ob.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* SCHEDULE INPUT (only for later) */}
@@ -508,6 +566,27 @@ export default function AssignTaskPage() {
               />
             </div>
           )}
+
+          {/* ATTACHMENTS */}
+          <div className="mb-5">
+            <label className="block text-base font-bold text-gray-700 mb-1.5">
+              Attachments <span className="text-sm font-normal text-gray-400">(optional)</span>
+            </label>
+
+            <input
+              key={fileInputKey}
+              type="file"
+              multiple
+              onChange={(e) => setFiles(Array.from(e.target.files || []))}
+              className="w-full text-sm text-gray-600 border border-gray-200 rounded-xl px-4 py-3 file:mr-3 file:rounded-lg file:border-0 file:bg-[#0C7347] file:px-3 file:py-1.5 file:text-white file:text-sm file:font-semibold"
+            />
+
+            {files.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1.5">
+                {files.length} file{files.length === 1 ? '' : 's'} selected — uploaded after the task is created.
+              </p>
+            )}
+          </div>
 
           {error && <p className="text-red-600 mb-4">{error}</p>}
           {success && <p className="text-[#0C7347] mb-4">{success}</p>}

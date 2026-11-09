@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { getStoredUser } from '../lib/auth';
-
-const API = 'http://localhost:5077';
+import { API } from '../lib/api';
 
 export default function FacultyLocationTracker() {
   const [hasPending, setHasPending] = useState(false);

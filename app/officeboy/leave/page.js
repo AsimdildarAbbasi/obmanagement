@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-const API = 'http://localhost:5077';
+import { API } from '../../lib/api';
 
 function formatDate(d) {
     if (!d) return '';
@@ -36,6 +35,31 @@ function StatusBadge({ status }) {
     );
 }
 
+function BalanceCard({ title, used, limit, remaining, pending }) {
+    const percent = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+    return (
+        <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100">
+            <div className="flex items-baseline justify-between mb-2">
+                <p className="text-xs font-semibold text-gray-500">{title}</p>
+                <p className="text-xs text-gray-400">{used} / {limit} days</p>
+            </div>
+            <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-2">
+                <div className="h-full rounded-full transition-all"
+                    style={{ width: `${percent}%`, backgroundColor: '#0C7347' }} />
+            </div>
+            <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">
+                    <span className="font-bold text-gray-700">{remaining}</span> remaining
+                </span>
+                {pending != null && Number(pending) > 0 && (
+                    <span className="text-amber-600 font-semibold">{pending} pending</span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function LeaveManagementPage() {
     const router = useRouter();
     const [user, setUser] = useState(null);
@@ -48,6 +72,7 @@ export default function LeaveManagementPage() {
     const [endDate, setEndDate] = useState('');
     const [reason, setReason] = useState('');
     const [formError, setFormError] = useState('');
+    const [balance, setBalance] = useState(null);
 
     useEffect(() => {
         const stored = sessionStorage.getItem('user');
@@ -56,7 +81,19 @@ export default function LeaveManagementPage() {
         if (parsed.role !== 1) { router.push('/'); return; }
         setUser(parsed);
         fetchLeaves(parsed.id);
+        fetchBalance(parsed.id);
     }, []);
+
+    async function fetchBalance(id) {
+        try {
+            const res = await fetch(`${API}/api/leaverequest/balance/${id}`);
+            if (!res.ok) return;
+            const json = await res.json();
+            setBalance(json);
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
     async function fetchLeaves(id) {
         setLoading(true);
@@ -122,6 +159,7 @@ export default function LeaveManagementPage() {
             setReason('');
             setTab('list');
             fetchLeaves(user.id);
+            fetchBalance(user.id);
         } catch (e) {
             console.error(e);
             setFormError('Something went wrong. Please try again.');
@@ -154,6 +192,26 @@ export default function LeaveManagementPage() {
                         </button>
                     )}
                 </div>
+
+                {/* Leave allowance */}
+                {tab === 'list' && balance && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <BalanceCard
+                            title="This year"
+                            used={balance.yearlyUsed}
+                            limit={balance.yearlyLimit}
+                            remaining={balance.yearlyRemaining}
+                            pending={balance.pendingDays}
+                        />
+                        <BalanceCard
+                            title="This month"
+                            used={balance.monthlyUsed}
+                            limit={balance.monthlyLimit}
+                            remaining={balance.monthlyRemaining}
+                            pending={null}
+                        />
+                    </div>
+                )}
 
                 {/* Summary strip */}
                 {tab === 'list' && !loading && leaves.length > 0 && (
@@ -259,7 +317,15 @@ export default function LeaveManagementPage() {
                 {tab === 'apply' && (
                     <div className="bg-white rounded-2xl px-6 py-7 md:px-8 md:py-8 shadow-sm border border-gray-100 max-w-lg">
                         <h2 className="text-lg font-bold text-gray-900 mb-1">New Leave Request</h2>
-                        <p className="text-xs text-gray-500 mb-6">Fill in the details below to submit your request.</p>
+                        <p className="text-xs text-gray-500 mb-2">Fill in the details below to submit your request.</p>
+                        {balance && (
+                            <p className="text-xs text-gray-600 mb-6 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                You have <span className="font-bold text-[#0C7347]">{balance.yearlyRemaining}</span> of {balance.yearlyLimit} days left this year
+                                and <span className="font-bold text-[#0C7347]">{balance.monthlyRemaining}</span> of {balance.monthlyLimit} days left this month.
+                                {Number(balance.pendingDays) > 0 && ` ${balance.pendingDays} day(s) are pending approval.`}
+                            </p>
+                        )}
+                        {!balance && <div className="mb-6" />}
 
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
