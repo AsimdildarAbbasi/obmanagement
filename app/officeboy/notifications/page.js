@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-const API = 'http://localhost:5077';
+import { API } from '../../lib/api';
 
 function formatDate(d) {
   if (!d) return '';
@@ -12,6 +11,13 @@ function formatDate(d) {
   });
 }
 
+function formatBytes(bytes) {
+  const n = Number(bytes) || 0;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function NotificationsPage() {
   const router  = useRouter();
   const [user,    setUser]    = useState(null);
@@ -19,12 +25,15 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) { router.push('/'); return; }
     const parsed = JSON.parse(stored);
     if (parsed.role !== 1) { router.push('/'); return; }
     setUser(parsed);
     fetchTasks(parsed.id);
+
+    const timer = setInterval(() => fetchTasks(parsed.id), 30000);
+    return () => clearInterval(timer);
   }, []);
 
   async function fetchTasks(id) {
@@ -42,6 +51,8 @@ export default function NotificationsPage() {
         longitude: t.longitude ?? t.Longitude,
         assignedBy: t.assignedBy ?? t.AssignedBy ?? '',
         taskTime: t.taskTime ?? t.TaskTime,
+        isOutsideCampus: t.isOutsideCampus ?? t.IsOutsideCampus ?? false,
+        attachments: Array.isArray(t.attachments) ? t.attachments : [],
       }));
       const pendingOnly = normalized.filter(t => t.status === 'Pending');
       setTasks(pendingOnly);
@@ -96,7 +107,7 @@ export default function NotificationsPage() {
                   New Task Assigned
                 </p>
                 <p className="text-sm text-gray-600 mt-0.5">{task.description}</p>
-                <div className="flex items-center gap-3 mt-1.5">
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                   <span className="text-xs text-gray-400">by {task.assignedBy}</span>
                   <span className="text-xs text-gray-400">·</span>
                   <span className="flex items-center gap-1 text-xs text-gray-400">
@@ -108,7 +119,32 @@ export default function NotificationsPage() {
                   </span>
                   <span className="text-xs text-gray-400">·</span>
                   <span className="text-xs text-gray-400">{formatDate(task.taskTime)}</span>
+                  {task.isOutsideCampus && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                      Outside campus
+                    </span>
+                  )}
                 </div>
+
+                {task.attachments.length > 0 && (
+                  <div className="mt-2 flex flex-col gap-1">
+                    {task.attachments.map(attachment => (
+                      <a
+                        key={attachment.id}
+                        href={`${API}${attachment.path}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 text-xs text-[#0C7347] font-semibold hover:underline">
+                        <svg width="11" height="11" fill="none" stroke="#0C7347" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round"
+                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        <span className="truncate">{attachment.fileName}</span>
+                        <span className="text-gray-400 font-normal shrink-0">{formatBytes(attachment.sizeBytes)}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* New badge */}

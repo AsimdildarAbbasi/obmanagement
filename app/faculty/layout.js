@@ -1,14 +1,17 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { getStoredUser } from '../lib/auth';
+import UserAvatar from '../components/UserAvatar';
 import FacultyLocationTracker from './FacultyLocationTracker';
+import NotificationBell from './NotificationBell';
 
 const navItems = [
-  { label: 'Dashboard',   href: '/faculty/dashboard'   },
-  { label: 'Assign Task', href: '/faculty/assign-task' },
-  { label: 'Tasks',       href: '/faculty/tasks'       }
+  { label: 'Dashboard',     href: '/faculty/dashboard'     },
+  { label: 'Assign Task',   href: '/faculty/assign-task'   },
+  { label: 'Tasks',         href: '/faculty/tasks'         },
+  { label: 'Notifications', href: '/faculty/notifications' }
 ];
 
 function NavIcon({ label, active }) {
@@ -30,6 +33,12 @@ function NavIcon({ label, active }) {
         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   );
+  if (label === 'Notifications') return (
+    <svg width="24" height="24" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  );
   if (label === 'Set Auto Task') return (
     <svg width="24" height="24" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" 
@@ -44,16 +53,19 @@ function NavIcon({ label, active }) {
 export default function FacultyLayout({ children }) {
   const router   = useRouter();
   const pathname = usePathname();
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const stored = getStoredUser();
     if (!stored || Number(stored.role) !== 2) {
       router.push('/');
+      return;
     }
+    setUser(stored);
   }, [router]);
 
   function handleLogout() {
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     router.push('/');
   }
 
@@ -105,6 +117,26 @@ export default function FacultyLayout({ children }) {
 
       <main className="flex-1 md:ml-64 min-h-screen flex flex-col">
         <FacultyLocationTracker />
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-white border-b border-gray-100 px-4 md:px-8 py-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <UserAvatar name={user?.name} imageUrl={user?.profileImageUrl} size={38} />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-800 truncate">{user?.name || 'BIIT Management'}</p>
+              <p className="text-xs text-gray-500">Faculty</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <NotificationBell />
+            <button onClick={handleLogout}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold text-white bg-[#0C7347] hover:opacity-90 transition-colors shrink-0">
+              <svg width="18" height="18" fill="none" stroke="#ffffff" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+              </svg>
+              Logout
+            </button>
+          </div>
+        </header>
         <div className="flex-1">
           {children}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '../../lib/api';
 
 export default function FloorsPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function FloorsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
+    const stored = sessionStorage.getItem('user');
     if (!stored) {
       router.push('/');
       return;
@@ -23,8 +24,8 @@ export default function FloorsPage() {
   async function fetchData() {
     try {
       const [floorRes, obRes] = await Promise.all([
-        fetch('http://localhost:5077/api/supervisor/floors'),
-        fetch('http://localhost:5077/api/supervisor/officeboys'),
+        fetch(`${API}/api/supervisor/floors`),
+        fetch(`${API}/api/supervisor/officeboys`),
       ]);
       setFloors(await floorRes.json());
       setObData(await obRes.json());
@@ -49,7 +50,7 @@ export default function FloorsPage() {
 
     try {
       setBusyFloorId(id);
-      const res = await fetch(`http://localhost:5077/api/supervisor/FloorOffices?id=${id}`);
+      const res = await fetch(`${API}/api/supervisor/FloorOffices?id=${id}`);
       const offices = await res.json();
       // Ensure offices is always an array
       setFloorOffices(prev => ({ ...prev, [id]: Array.isArray(offices) ? offices : [] }));

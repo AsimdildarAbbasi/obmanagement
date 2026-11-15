@@ -1,8 +1,8 @@
   'use client';
   import { useState, useEffect } from 'react';
   import { useRouter } from 'next/navigation';
-
-  const API = 'http://localhost:5077';
+  import { API } from '../../lib/api';
+  import UserAvatar from '../../components/UserAvatar';
 
   function StatCard({ icon, label, count, color }) {
     return (
@@ -34,7 +34,7 @@
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-      const stored = localStorage.getItem('user');
+      const stored = sessionStorage.getItem('user');
       if (!stored) { router.push('/'); return; }
       const parsed = JSON.parse(stored);
       if (parsed.role !== 1) { router.push('/'); return; }
@@ -85,6 +85,7 @@
           latitude: t.latitude ?? t.Latitude,
           longitude: t.longitude ?? t.Longitude,
           assignedBy: t.assignedBy ?? t.AssignedBy ?? '',
+          assignedByImageUrl: t.assignedByImageUrl ?? t.AssignedByImageUrl ?? null,
           taskTime: t.taskTime ?? t.TaskTime,
           rating: t.rating ?? t.Rating,
           remarks: t.remarks ?? t.Remarks ?? '',
@@ -189,11 +190,8 @@
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-800">{task.description}</p>
                     <div className="flex flex-wrap items-center gap-3 mt-1.5">
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <svg width="12" height="12" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round"
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <UserAvatar name={task.assignedBy} imageUrl={task.assignedByImageUrl} size={20} />
                         {task.assignedBy}
                       </span>
                       <span className="flex items-center gap-1 text-xs text-gray-500">

@@ -7,7 +7,7 @@ export const dashboardRoutes = {
 export function getStoredUser() {
   if (typeof window === 'undefined') return null;
   try {
-    const item = localStorage.getItem('user');
+    const item = sessionStorage.getItem('user');
     if (!item) return null;
     return JSON.parse(item);
   } catch {
